@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ResearchAgentTraceEvent",
+  "type": "object",
+  "required": ["time", "action", "reason"],
+  "properties": {
+    "time": { "type": "string" },
+    "action": {
+      "type": "string",
+      "enum": [
+        "task_loaded",
+        "query_planned",
+        "source_saved",
+        "source_rejected",
+        "extracted",
+        "translated",
+        "artifact_created",
+        "critic_note",
+        "harness_patch_proposed",
+        "run_completed"
+      ]
+    },
+    "url": { "type": "string" },
+    "input": {},
+    "output": {},
+    "reason": { "type": "string" },
+    "artifact": { "type": "string" },
+    "failure": {
+      "type": ["string", "null"],
+      "enum": [
+        "shallow_search",
+        "bad_query_language",
+        "trusted_weak_source",
+        "missed_primary_source",
+        "translation_loss",
+        "failed_to_save_artifact",
+        "over_saved_junk",
+        "stopped_too_early",
+        "no_clear_next_lead",
+        "hallucinated_synthesis",
+        null
+      ]
+    }
+  },
+  "additionalProperties": true
+}
