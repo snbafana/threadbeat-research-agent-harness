@@ -1,0 +1,11 @@
+{
+  "ask": "Run the baseline research harness after enabling versioned run artifacts.",
+  "inputs": {
+    "files": [
+      {
+        "path": ".threadbeat/seed.txt",
+        "content": "province map seed v2"
+      }
+    ]
+  }
+}

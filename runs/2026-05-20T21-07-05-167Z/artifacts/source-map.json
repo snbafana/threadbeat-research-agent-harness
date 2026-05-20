@@ -1,0 +1,14 @@
+{
+  "task": "Run the baseline research harness after enabling versioned run artifacts.",
+  "sources": [],
+  "rejected": [
+    {
+      "title": "Generic summary pages",
+      "reason": "Likely too shallow unless they unlock primary documents or local-language terms."
+    }
+  ],
+  "next_leads": [
+    "Run the baseline research harness after enabling versioned run artifacts. primary sources",
+    "Run the baseline research harness after enabling versioned run artifacts. maps planning documents local language terms"
+  ]
+}
