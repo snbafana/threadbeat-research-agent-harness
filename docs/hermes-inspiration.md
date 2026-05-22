@@ -46,13 +46,13 @@ Current implemented tools:
 - `source.classify`
 - `source.rank`
 - `frontier.next`
+- `batch.run`
 - `trace.critic`
 
 Next concrete tools:
 
 - `artifact.write`: persist raw/source outputs with content hashes and preview references.
 - `trace.critic`: read trace/session/artifacts and propose one harness patch.
-- `batch.run`: run repeated tasks, aggregate tool stats, and compare traces across runs.
 
 Longer-term adapters:
 

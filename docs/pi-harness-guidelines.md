@@ -189,4 +189,5 @@ Keep this repo as the experimentation surface. Promote to Threadbeat core only w
 9. Add PDF preservation and best-effort text extraction. Done.
 10. Add frontier-next leads from source decisions. Done.
 11. Add translation preservation for local-language queries. Done.
-12. Add batch-run trajectory tooling and stronger source frontier expansion.
+12. Add batch-run trajectory tooling. Done.
+13. Add Pi loop smoke and stronger source frontier expansion.

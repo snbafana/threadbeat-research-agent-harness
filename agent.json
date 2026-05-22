@@ -12,6 +12,7 @@
     "source.classify",
     "source.rank",
     "frontier.next",
+    "batch.run",
     "trace.critic"
   ],
   "traceSchema": "schemas/trace-event.schema.json",
