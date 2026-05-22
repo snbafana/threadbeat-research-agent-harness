@@ -196,4 +196,5 @@ Keep this repo as the experimentation surface. Promote to Threadbeat core only w
 14. Add model-backed critic loop around the bounded trace critic. Done.
 15. Add resume planning for heartbeat and restart semantics. Done.
 16. Add artifact.write for hash-backed artifact persistence. Done.
-17. Add source.archive for normalized citation metadata.
+17. Add source.archive for normalized citation metadata. Done.
+18. Add source.compare for contradiction and provenance review.

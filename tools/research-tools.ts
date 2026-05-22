@@ -7,6 +7,7 @@ import { pdfExtract } from "./pdf.ts";
 import { createPiTools } from "./pi-adapter.ts";
 import { runPiLoop } from "./pi-loop.ts";
 import { planResume } from "./resume.ts";
+import { archiveSource } from "./source-archive.ts";
 import { translateText } from "./translation.ts";
 import { webFetch, webSearch, type FetchedPage, type SearchResult } from "./web.ts";
 
@@ -369,6 +370,35 @@ export const researchTools: ResearchTool[] = [
       return await writeArtifact({ artifactDir, name, content, format, sourceUrl });
     },
   },
+  {
+    name: "source.archive",
+    description: "Persist a source archive record with citation metadata, bounded text preview, linked raw artifacts, and hash metadata.",
+    parameters: {
+      type: "object",
+      required: ["artifactDir", "index", "result", "fetched", "decision", "rank"],
+      properties: {
+        artifactDir: { type: "string" },
+        index: { type: "number" },
+        result: { type: "object" },
+        fetched: { type: "object" },
+        pdf: { type: "object" },
+        decision: { type: "object" },
+        rank: { type: "object" },
+      },
+    },
+    async execute(args) {
+      const { artifactDir, index, result, fetched, pdf, decision, rank } = args as {
+        artifactDir: string;
+        index: number;
+        result: Record<string, unknown>;
+        fetched: Record<string, unknown>;
+        pdf?: Record<string, unknown> | null;
+        decision: Record<string, unknown>;
+        rank: Record<string, unknown>;
+      };
+      return await archiveSource({ artifactDir, index, result, fetched, pdf, decision, rank });
+    },
+  },
 ];
 
 export function createToolRunner({
@@ -533,7 +563,7 @@ function critiqueTrace({ ask, queryPlan, sourceDecisions }: CriticInput): Critic
   if (thin.length > 0) labels.add("failed_to_save_artifact");
   if (highValue.length === 0) labels.add("trusted_weak_source");
 
-  const nextTool = "source.archive";
+  const nextTool = "source.compare";
   return {
     failureLabels: [...labels],
     assessment: [

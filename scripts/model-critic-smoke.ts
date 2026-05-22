@@ -40,6 +40,6 @@ assert.ok(result.modelEvents.includes("tool_execution_start"));
 assert.ok(result.modelEvents.includes("tool_execution_end"));
 assert.ok(result.modelEvents.includes("agent_end"));
 assert.equal(result.pendingResponses, 0);
-assert.equal(result.nextTool, "source.archive");
+assert.equal(result.nextTool, "source.compare");
 
 console.log(JSON.stringify({ ok: true, smoke: "model-critic", events: result.modelEvents.length }, null, 2));

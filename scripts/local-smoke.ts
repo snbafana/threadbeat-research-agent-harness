@@ -37,6 +37,7 @@ for (const file of [
   "harness-patch.md",
   "task.json",
   "artifacts/source-1.json",
+  "artifacts/source-1.meta.json",
   "artifacts/index.json",
   "artifacts/source-map.json",
   "artifacts/source-map.meta.json",
@@ -52,6 +53,8 @@ const trace = readFileSync(path.join(runDir, "trace.jsonl"), "utf8")
   .split("\n")
   .map((line) => JSON.parse(line));
 const sourceDecisions = JSON.parse(readFileSync(path.join(runDir, "artifacts/source-decisions.json"), "utf8"));
+const sourceArchive = JSON.parse(readFileSync(path.join(runDir, "artifacts/source-1.json"), "utf8"));
+const sourceArchiveMetadata = JSON.parse(readFileSync(path.join(runDir, "artifacts/source-1.meta.json"), "utf8"));
 assert.ok(trace.some((event) => event.action === "task_loaded"));
 assert.ok(trace.some((event) => event.action === "critic_note"));
 assert.ok(trace.some((event) => event.action === "tool_started" && event.tool === "query.expand"));
@@ -62,6 +65,7 @@ assert.ok(trace.some((event) => event.action === "tool_started" && event.tool ==
 assert.ok(trace.some((event) => event.action === "tool_completed" && event.tool === "translate.text"));
 assert.ok(trace.some((event) => event.action === "tool_completed" && event.tool === "source.classify"));
 assert.ok(trace.some((event) => event.action === "tool_completed" && event.tool === "source.rank"));
+assert.ok(trace.some((event) => event.action === "tool_completed" && event.tool === "source.archive"));
 assert.ok(trace.some((event) => event.action === "tool_completed" && event.tool === "frontier.next"));
 assert.ok(trace.some((event) => event.action === "tool_completed" && event.tool === "artifact.write"));
 assert.ok(trace.some((event) => event.action === "tool_completed" && event.tool === "model.critic"));
@@ -74,6 +78,8 @@ assert.ok(trace.some((event) => event.action === "opened_url"));
 assert.ok(trace.some((event) => event.action === "translated"));
 assert.ok(trace.every((event) => event.reason), "every trace event needs a reviewable reason");
 assert.ok(sourceDecisions.every((source: { textChars: number; decision: string }) => source.textChars > 0 || source.decision === "rejected"), "empty extracted pages must not be saved");
+assert.ok(sourceArchive.citation.url, "source archive needs citation URL");
+assert.match(sourceArchiveMetadata.sha256, /^[a-f0-9]{64}$/);
 const session = readFileSync(path.join(runDir, "session.jsonl"), "utf8");
 assert.match(session, /"kind":"task"/);
 assert.match(session, /"kind":"tool_call"/);
@@ -85,9 +91,9 @@ assert.ok(sourceMap.next_leads.length > 0, "source map needs planned frontier le
 assert.ok(sourceMap.translations.length > 0, "source map needs preserved query translations");
 assert.match(sourceMapMetadata.sha256, /^[a-f0-9]{64}$/);
 const patch = readFileSync(path.join(runDir, "harness-patch.md"), "utf8");
-assert.match(patch, /source\.archive/);
+assert.match(patch, /source\.compare/);
 const resumePlan = JSON.parse(readFileSync(path.join(runDir, "artifacts/resume-plan.json"), "utf8"));
-assert.match(resumePlan.resumePrompt, /source\.archive/);
+assert.match(resumePlan.resumePrompt, /source\.compare/);
 
 console.log(JSON.stringify({
   ok: true,

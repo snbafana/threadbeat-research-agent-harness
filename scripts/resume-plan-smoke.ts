@@ -32,7 +32,7 @@ try {
   });
   const result = await runTool("resume.plan", {
     runDir,
-    nextTool: "source.archive",
+    nextTool: "source.compare",
     heartbeatIntervalMinutes: 1,
   }, "Exercise restart plan generation from persisted run files.") as {
     artifact: string;
@@ -43,11 +43,11 @@ try {
 
   assert.ok(events.some((event) => event.action === "tool_started" && event.tool === "resume.plan"));
   assert.ok(events.some((event) => event.action === "tool_completed" && event.tool === "resume.plan"));
-  assert.match(result.resumePrompt, /source\.archive/);
+  assert.match(result.resumePrompt, /source\.compare/);
   assert.equal(result.shouldResume, true);
   assert.equal(result.lastSavePoint, "frontier_planned");
   const artifact = JSON.parse(await readFile(result.artifact, "utf8"));
-  assert.equal(artifact.nextTool, "source.archive");
+  assert.equal(artifact.nextTool, "source.compare");
 
   console.log(JSON.stringify({ ok: true, smoke: "resume-plan" }, null, 2));
 } finally {

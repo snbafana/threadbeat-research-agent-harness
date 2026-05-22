@@ -52,10 +52,11 @@ Current implemented tools:
 - `model.critic`
 - `resume.plan`
 - `artifact.write`
+- `source.archive`
 
 Next concrete tools:
 
-- `source.archive`: normalize raw/source outputs with content hashes and citation metadata.
+- `source.compare`: compare saved sources for contradiction, provenance gaps, and follow-up value.
 
 Longer-term adapters:
 

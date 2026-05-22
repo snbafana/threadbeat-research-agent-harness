@@ -282,16 +282,28 @@ async function inspectSearchResults(results: (SearchResult & { query: string })[
         : fetched;
       const decision = await runTool("source.classify", { result, fetched: sourceText }, "Classify source quality separately from fetching so source taste can be tuned.") as SourceDecisionRecord;
       const rank = await runTool("source.rank", { result, fetched: sourceText, decision }, "Rank saved and rejected sources so the critic can inspect research value.") as Record<string, unknown>;
-      const artifact = path.join(runDir, "artifacts", `source-${decisions.length + 1}.json`);
-      await writeJson(artifact, { result, fetched, pdf, decision, rank });
+      const archive = await runTool("source.archive", {
+        artifactDir: path.join(runDir, "artifacts"),
+        index: decisions.length + 1,
+        result,
+        fetched: sourceText,
+        pdf,
+        decision,
+        rank,
+      }, "Archive source triage with citation metadata, hash metadata, and bounded text preview.") as {
+        artifact: string;
+        metadataArtifact: string;
+        sha256: string;
+        sourceArtifacts: string[];
+      };
       event(decision.decision === "saved" ? "source_saved" : "source_rejected", {
         url: result.url,
-        output: { ...decision, rank },
-        artifact,
+        output: { ...decision, rank, sha256: archive.sha256, sourceArtifacts: archive.sourceArtifacts },
+        artifact: archive.artifact,
         reason: decision.reason,
         failure: decision.failure,
       });
-      decisions.push({ ...result, ...decision, rank, artifact });
+      decisions.push({ ...result, ...decision, rank, artifact: archive.artifact });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       const decision: Pick<SourceDecisionRecord, "decision" | "reason" | "failure"> = {

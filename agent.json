@@ -17,7 +17,8 @@
     "trace.critic",
     "model.critic",
     "resume.plan",
-    "artifact.write"
+    "artifact.write",
+    "source.archive"
   ],
   "traceSchema": "schemas/trace-event.schema.json",
   "sessionPolicy": {
