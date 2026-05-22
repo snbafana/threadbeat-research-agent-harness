@@ -1,3 +1,4 @@
+import { browserSnapshot } from "./browser.ts";
 import { webFetch, webSearch, type FetchedPage, type SearchResult } from "./web.ts";
 
 export type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
@@ -104,6 +105,29 @@ export const researchTools: ResearchTool[] = [
     async execute(args) {
       const { url, maxChars = 12000 } = args as { url: string; maxChars?: number };
       return await webFetch(url, { maxChars });
+    },
+  },
+  {
+    name: "browser.snapshot",
+    description: "Capture a browser-backed page snapshot, preserving screenshot/text artifacts when browser execution is available.",
+    parameters: {
+      type: "object",
+      required: ["url"],
+      properties: {
+        url: { type: "string" },
+        artifactDir: { type: "string" },
+        name: { type: "string" },
+        maxChars: { type: "number", default: 12000 },
+      },
+    },
+    async execute(args) {
+      const { url, artifactDir, name, maxChars = 12000 } = args as {
+        url: string;
+        artifactDir?: string;
+        name?: string;
+        maxChars?: number;
+      };
+      return await browserSnapshot({ url, artifactDir, name, maxChars });
     },
   },
   {
@@ -230,10 +254,10 @@ function expandQueries(ask: string): string[] {
 
 function classifySource(result: SearchResult, fetched: FetchedPage): SourceDecision {
   const haystack = `${result.title} ${result.snippet} ${fetched.title} ${fetched.text}`.toLowerCase();
-  if (!fetched.charCount) {
+  if (fetched.charCount < 500) {
     return {
       decision: "rejected",
-      reason: "Fetched page produced no extracted text, so it cannot be validated or quoted.",
+      reason: "Fetched page produced too little extracted text to validate or quote.",
       sourceType: inferSourceType(haystack),
       textChars: fetched.charCount,
       failure: "failed_to_save_artifact",
@@ -319,7 +343,7 @@ function critiqueTrace({ ask, queryPlan, sourceDecisions }: CriticInput): Critic
   if (thin.length > 0) labels.add("failed_to_save_artifact");
   if (highValue.length === 0) labels.add("trusted_weak_source");
 
-  const nextTool = thin.length > 0 ? "browser.snapshot" : "pdf.extract";
+  const nextTool = thin.length > 0 ? "pdf.extract" : "pdf.extract";
   return {
     failureLabels: [...labels],
     assessment: [

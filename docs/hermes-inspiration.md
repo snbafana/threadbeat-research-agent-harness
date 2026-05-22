@@ -40,6 +40,7 @@ Current implemented tools:
 - `query.expand`
 - `web.search`
 - `web.fetch`
+- `browser.snapshot`
 - `source.classify`
 - `source.rank`
 - `trace.critic`
@@ -48,7 +49,6 @@ Next concrete tools:
 
 - `artifact.write`: persist raw/source outputs with content hashes and preview references.
 - `pdf.extract`: download PDF, preserve bytes, extract text, render first page when possible.
-- `browser.snapshot`: open URL with browser backend, save DOM text plus screenshot.
 - `translate.text`: preserve original and translated text with uncertainty notes.
 - `frontier.next`: read source decisions and propose next search leads.
 - `trace.critic`: read trace/session/artifacts and propose one harness patch.
@@ -59,3 +59,5 @@ Longer-term adapters:
 - Pi tool adapter for real model loops.
 - MCP adapter for Claude/Codex/opencode-compatible tool exposure.
 - Daytona/Kubernetes sandbox adapter for restartable cloud execution.
+
+Runtime note: `browser.snapshot` uses Playwright when Chromium is installed. In a fresh sandbox, run `npm run install:browsers` during setup. If Chromium is unavailable, the tool records `mode: fallback_fetch` and a `browser_unavailable` trace failure instead of pretending it captured a real browser snapshot.

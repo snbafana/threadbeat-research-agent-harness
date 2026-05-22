@@ -3,7 +3,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { createRunState } from "./harness/run-state.ts";
 import { createToolRunner } from "./tools/research-tools.ts";
-import type { SearchResult } from "./tools/web.ts";
+import type { FetchedPage, SearchResult } from "./tools/web.ts";
 
 interface TaskPayload {
   ask: string;
@@ -192,7 +192,7 @@ async function inspectSearchResults(results: (SearchResult & { query: string })[
         input: { title: result.title, query: result.query },
         reason: "Open promising search results before deciding whether to save or reject them.",
       });
-      const fetched = await runTool("web.fetch", { url: result.url, maxChars: 8000 }, "Fetch source text through the tool runner so artifacts and failures can be audited.");
+      const fetched = await fetchWithSnapshotFallback(result);
       const decision = await runTool("source.classify", { result, fetched }, "Classify source quality separately from fetching so source taste can be tuned.") as SourceDecisionRecord;
       const rank = await runTool("source.rank", { result, fetched, decision }, "Rank saved and rejected sources so the critic can inspect research value.") as Record<string, unknown>;
       const artifact = path.join(runDir, "artifacts", `source-${decisions.length + 1}.json`);
@@ -222,6 +222,49 @@ async function inspectSearchResults(results: (SearchResult & { query: string })[
     }
   }
   return decisions;
+}
+
+async function fetchWithSnapshotFallback(result: SearchResult): Promise<FetchedPage> {
+  const fetched = await runTool("web.fetch", { url: result.url, maxChars: 8000 }, "Fetch source text through the tool runner so artifacts and failures can be audited.") as FetchedPage;
+  if (fetched.charCount >= 500) return fetched;
+
+  const snapshot = await runTool("browser.snapshot", {
+    url: result.url,
+    artifactDir: path.join(runDir, "artifacts", "browser"),
+    name: result.title,
+    maxChars: 8000,
+  }, "Retry thin fetches with browser.snapshot so browser-only pages are not silently misclassified.") as {
+    url: string;
+    title: string;
+    text: string;
+    textChars: number;
+    mode: string;
+    screenshotArtifact?: string;
+    textArtifact?: string;
+    warning?: string;
+  };
+  event("snapshotted_url", {
+    url: result.url,
+    output: {
+      mode: snapshot.mode,
+      textChars: snapshot.textChars,
+      screenshotArtifact: snapshot.screenshotArtifact,
+      textArtifact: snapshot.textArtifact,
+      warning: snapshot.warning,
+    },
+    artifact: snapshot.screenshotArtifact ?? snapshot.textArtifact,
+    reason: "Browser snapshot attempted after a thin fetch result.",
+    failure: snapshot.mode === "fallback_fetch" ? "browser_unavailable" : null,
+  });
+  if (snapshot.textChars > fetched.charCount) {
+    return {
+      url: snapshot.url,
+      title: snapshot.title,
+      text: snapshot.text,
+      charCount: snapshot.textChars,
+    };
+  }
+  return fetched;
 }
 
 function dedupeByUrl<T extends { url: string }>(results: T[]): T[] {

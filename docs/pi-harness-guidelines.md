@@ -185,4 +185,5 @@ Keep this repo as the experimentation surface. Promote to Threadbeat core only w
 5. Add source-rank and query-expansion tools. Done.
 6. Add a faux-provider Pi smoke so the model loop is testable without network/model calls.
 7. Add a trace critic that proposes `harness-patch.md` from actual run artifacts. Done.
-8. Add PDF, browser screenshot, translation, and frontier-next tools one at a time.
+8. Add browser.snapshot for thin fetch retry and screenshot/text preservation. Done.
+9. Add PDF, translation, and frontier-next tools one at a time.
