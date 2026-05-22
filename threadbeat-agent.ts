@@ -126,7 +126,7 @@ Task: ${task.ask}
 - Classified sources with source.classify and saved or rejected them with explicit reasons.
 - Ranked source value with source.rank.
 - Planned next leads with frontier.next.
-- Generated critique and next patch with model.critic.
+- Wrote reviewable evidence for an external critic agent.
 `;
 await writeFile(path.join(runDir, "decision-log.md"), decisionLog);
 event("artifact_created", {
@@ -134,67 +134,19 @@ event("artifact_created", {
   reason: "Expose explicit rationale without depending on hidden model thoughts.",
 });
 
-const criticOutput = await runTool("model.critic", {
-  ask: task.ask,
-  queryPlan,
-  sourceDecisions,
-}, "Pi-backed critic reads saved trace outputs and proposes one concrete harness patch.") as {
-  failureLabels: string[];
-  assessment: string;
-  patchTitle: string;
-  patchRecommendation: string;
-  nextTool: string;
-  modelEventCount?: number;
-};
-
-const critic = `# Critic Report
-
-Failure labels:
-
-${criticOutput.failureLabels.map((label) => `- ${label}`).join("\n")}
-
-Assessment:
-
-${criticOutput.assessment}
-
-Next harness change:
-
-${criticOutput.patchRecommendation}
-`;
-await writeFile(path.join(runDir, "critic.md"), critic);
-event("critic_note", {
-  output: {
-    failureLabels: criticOutput.failureLabels,
-    modelEventCount: criticOutput.modelEventCount,
-  },
-  artifact: path.join(runDir, "critic.md"),
-  reason: "model.critic names the first harness limitation before the next run.",
-});
-
-const patch = `# Harness Patch Proposal
-
-${criticOutput.patchTitle}
-
-${criticOutput.patchRecommendation}
-`;
-await writeFile(path.join(runDir, "harness-patch.md"), patch);
-event("harness_patch_proposed", {
-  artifact: path.join(runDir, "harness-patch.md"),
-  reason: "Make the next implementation step concrete and reviewable.",
-});
-await appendSession("critic", {
-  failures: criticOutput.failureLabels,
-  nextTool: criticOutput.nextTool,
-  artifacts: ["critic.md", "harness-patch.md"],
+await writeJson(path.join(runDir, "task.json"), task);
+event("run_completed", {
+  output: { runDir },
+  reason: "Starter run finished with trace, decision log, source map, and external critic handoff.",
 });
 await writeTrace();
 await writeArtifactIndex();
 
 const resumePlan = await runTool("resume.plan", {
   runDir,
-  nextTool: criticOutput.nextTool,
+  nextTool: "external.critic",
   heartbeatIntervalMinutes: 1,
-}, "Convert persisted run files into explicit heartbeat and restart instructions.") as {
+}, "Convert persisted run files into explicit handoff instructions for the external critic agent.") as {
   artifact: string;
   resumePrompt: string;
   shouldResume: boolean;
@@ -209,16 +161,10 @@ event("resume_planned", {
 });
 await appendSession("resume_plan", {
   artifact: resumePlan.artifact,
-  nextTool: criticOutput.nextTool,
+  nextTool: "external.critic",
   shouldResume: resumePlan.shouldResume,
 });
 
-event("run_completed", {
-  output: { runDir },
-  reason: "Starter run finished with trace, decision log, critic report, and patch proposal.",
-});
-
-await writeJson(path.join(runDir, "task.json"), task);
 await writeArtifactIndex();
 await savePoint("run_completed", { runDir });
 await writeTrace();

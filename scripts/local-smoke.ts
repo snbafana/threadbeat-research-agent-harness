@@ -33,8 +33,6 @@ for (const file of [
   "trace.jsonl",
   "session.jsonl",
   "decision-log.md",
-  "critic.md",
-  "harness-patch.md",
   "task.json",
   "artifacts/source-1.json",
   "artifacts/source-1.meta.json",
@@ -56,7 +54,6 @@ const sourceDecisions = JSON.parse(readFileSync(path.join(runDir, "artifacts/sou
 const sourceArchive = JSON.parse(readFileSync(path.join(runDir, "artifacts/source-1.json"), "utf8"));
 const sourceArchiveMetadata = JSON.parse(readFileSync(path.join(runDir, "artifacts/source-1.meta.json"), "utf8"));
 assert.ok(trace.some((event) => event.action === "task_loaded"));
-assert.ok(trace.some((event) => event.action === "critic_note"));
 assert.ok(trace.some((event) => event.action === "tool_started" && event.tool === "query.expand"));
 assert.ok(trace.some((event) => event.action === "tool_started" && event.tool === "web.search"));
 assert.ok(trace.some((event) => event.action === "tool_completed" && event.tool === "web.fetch"));
@@ -68,9 +65,11 @@ assert.ok(trace.some((event) => event.action === "tool_completed" && event.tool 
 assert.ok(trace.some((event) => event.action === "tool_completed" && event.tool === "source.archive"));
 assert.ok(trace.some((event) => event.action === "tool_completed" && event.tool === "frontier.next"));
 assert.ok(trace.some((event) => event.action === "tool_completed" && event.tool === "artifact.write"));
-assert.ok(trace.some((event) => event.action === "tool_completed" && event.tool === "model.critic"));
 assert.ok(trace.some((event) => event.action === "tool_completed" && event.tool === "resume.plan"));
 assert.ok(trace.some((event) => event.action === "resume_planned"));
+assert.ok(trace.every((event) => event.tool !== "model.critic"), "research agent must not critique itself");
+assert.ok(trace.every((event) => event.tool !== "trace.critic"), "research agent must not run trace critic");
+assert.ok(trace.every((event) => event.action !== "critic_note"), "critic notes belong to the external critic agent");
 assert.ok(trace.some((event) => event.action === "frontier_planned"));
 assert.ok(trace.some((event) => event.action === "save_point"));
 assert.ok(trace.some((event) => event.action === "searched"));
@@ -85,15 +84,16 @@ assert.match(session, /"kind":"task"/);
 assert.match(session, /"kind":"tool_call"/);
 assert.match(session, /"kind":"save_point"/);
 assert.match(session, /"kind":"resume_plan"/);
+assert.doesNotMatch(session, /"kind":"critic"/);
 const sourceMap = JSON.parse(readFileSync(path.join(runDir, "artifacts/source-map.json"), "utf8"));
 const sourceMapMetadata = JSON.parse(readFileSync(path.join(runDir, "artifacts/source-map.meta.json"), "utf8"));
 assert.ok(sourceMap.next_leads.length > 0, "source map needs planned frontier leads");
 assert.ok(sourceMap.translations.length > 0, "source map needs preserved query translations");
 assert.match(sourceMapMetadata.sha256, /^[a-f0-9]{64}$/);
-const patch = readFileSync(path.join(runDir, "harness-patch.md"), "utf8");
-assert.match(patch, /source\.compare/);
 const resumePlan = JSON.parse(readFileSync(path.join(runDir, "artifacts/resume-plan.json"), "utf8"));
-assert.match(resumePlan.resumePrompt, /source\.compare/);
+assert.match(resumePlan.resumePrompt, /external\.critic/);
+assert.equal(resumePlan.nextTool, "external.critic");
+assert.equal(resumePlan.shouldResume, false);
 
 console.log(JSON.stringify({
   ok: true,

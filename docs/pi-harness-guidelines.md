@@ -11,7 +11,7 @@ Use Pi as the inner agent loop and harness engine, but make this repository own 
 - what each tool must persist;
 - how session state reloads;
 - what evidence a human can review;
-- how failures become the next harness edit.
+- how external critics can review runs and edit the repo.
 
 Threadbeat should continue to see a simple execution unit: a task enters, events and artifacts come out. Pi can manage turns, messages, hooks, tool execution, and save points inside that unit.
 
@@ -20,8 +20,9 @@ Threadbeat should continue to see a simple execution unit: a task enters, events
 Keep three layers separate:
 
 - **Threadbeat worker**: creates task payloads, starts the sandbox, streams events, commits/pushes run artifacts, and tears down external resources.
-- **Research harness**: loads `agent.json`, owns run/session directories, normalizes tools, records trace events, enforces save points, and writes review artifacts.
+- **Research harness**: loads `agent.json`, owns run/session directories, normalizes tools, records trace events, enforces save points, and writes evidence artifacts.
 - **Pi agent loop**: plans, calls tools, receives tool results, decides whether to continue, and emits model/tool events.
+- **External critic agent**: reads completed run artifacts, evaluates failures, edits this GitHub repo, and commits harness improvements separately from run artifacts.
 
 Do not move Pi concepts like turns, attempts, or provider registries into Threadbeat core until repeated real runs prove the outer `tasks` and `events` model cannot represent the behavior.
 
@@ -36,10 +37,9 @@ Persist these files per run or resumable session:
 - `trace.jsonl`: reviewable event stream with reasons and failure labels.
 - `artifacts/`: raw fetched pages, PDFs, screenshots, extracted text, translations, source decisions, and final reports.
 - `*.meta.json`: hash, byte length, preview, source URL, and write timestamp for persisted artifacts.
-- `harness-patch.md`: one concrete proposed change after each run.
-- `artifacts/resume-plan.json`: heartbeat/restart instructions derived from persisted run files.
+- `artifacts/resume-plan.json`: restart or external-critic handoff instructions derived from persisted run files.
 
-Do not persist hidden chain of thought. Persist decision summaries, tool inputs/outputs, source evidence, critic notes, and explicit uncertainty.
+Do not persist hidden chain of thought. Persist decision summaries, tool inputs/outputs, source evidence, handoff notes, and explicit uncertainty.
 
 ## Turn Snapshots
 
@@ -96,8 +96,8 @@ Build tools in tiers so quality improves without rewriting the harness:
 - **Tier 0**: deterministic local tools for smoke tests: web search, web fetch, source classifier.
 - **Tier 1**: source preservation: raw HTML, PDF download, screenshot, text extraction, content hash, citation metadata.
 - **Tier 2**: browser/device tools: logged-in browser, DOM snapshot, screenshot, click/type/download, network capture where available.
-- **Tier 3**: research intelligence: query expansion, local-language translation, source-rank critics, contradiction detection, depth scoring.
-- **Tier 4**: self-improvement: trace critic proposes prompt/tool/schema diffs; human accepts or rejects; accepted changes land as commits.
+- **Tier 3**: research intelligence: query expansion, local-language translation, source ranking, contradiction detection, depth scoring.
+- **Tier 4**: external improvement: a separate critic agent reads completed runs, proposes or applies prompt/tool/schema diffs, and commits accepted changes.
 
 Each tier must have an end-to-end smoke before being used in a long-running agent.
 
@@ -109,7 +109,7 @@ Useful hook points:
 
 - before tool call: permission, credential allowlist, query budget, domain allow/deny.
 - after tool call: artifact completeness, output redaction, source quality checks.
-- after turn: stop/continue decision, trace critic, save point.
+- after turn: stop/continue decision, evidence completeness, save point.
 - on failure: classify failure, preserve partial artifact, decide retry versus stop.
 
 Hooks should receive a small context object with run id, session id, artifact directory, task metadata, and a trace writer. Avoid handing hooks raw mutable internals.
@@ -122,14 +122,13 @@ Long-running research needs explicit stop conditions:
 - no new leads after N search/frontier expansions;
 - repeated translation or fetch failures;
 - budget/time/domain limits reached;
-- critic says current evidence does not support further useful search;
 - human heartbeat asks the agent to pivot or stop.
 
 Every stop must write a reason and a next-step recommendation.
 
-## Critic Loop
+## External Critic Loop
 
-The critic should evaluate traces and artifacts, not hidden model state.
+The research agent must not critique itself or edit its own harness. The critic is a separate agent that evaluates traces and artifacts, not hidden model state.
 
 Minimum critic output:
 
@@ -140,7 +139,7 @@ Minimum critic output:
 - failure labels;
 - one patch recommendation.
 
-Self-updating is allowed only through reviewable diffs. The agent can propose edits; the harness should commit accepted changes separately from run artifacts.
+Self-updating is allowed only through reviewable diffs from the external critic agent. The research run writes evidence; the critic run edits the repo and commits harness changes separately from run artifacts.
 
 ## Credential And Sandbox Policy
 
@@ -186,15 +185,16 @@ Keep this repo as the experimentation surface. Promote to Threadbeat core only w
 4. Move harness/tool implementation to TypeScript with `tsc --noEmit` contract checks. Done.
 5. Add source-rank and query-expansion tools. Done.
 6. Add a faux-provider Pi smoke so the model loop is testable without network/model calls.
-7. Add a trace critic that proposes `harness-patch.md` from actual run artifacts. Done.
+7. Keep trace/model critic tooling external to the research agent run path. Done.
 8. Add browser.snapshot for thin fetch retry and screenshot/text preservation. Done.
 9. Add PDF preservation and best-effort text extraction. Done.
 10. Add frontier-next leads from source decisions. Done.
 11. Add translation preservation for local-language queries. Done.
 12. Add batch-run trajectory tooling. Done.
 13. Add Pi loop smoke and typed pi.loop tool. Done.
-14. Add model-backed critic loop around the bounded trace critic. Done.
+14. Add model-backed critic loop as an external repo tool, not an in-run research tool. Done.
 15. Add resume planning for heartbeat and restart semantics. Done.
 16. Add artifact.write for hash-backed artifact persistence. Done.
 17. Add source.archive for normalized citation metadata. Done.
-18. Add source.compare for contradiction and provenance review.
+18. Add heartbeat data-room smoke that proves one search-backed person can be added per iteration. Done.
+19. Add source.compare for contradiction and provenance review.

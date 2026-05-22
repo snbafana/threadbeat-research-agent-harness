@@ -14,7 +14,7 @@ export interface BatchRunItem {
   traceEvents: number;
   savedSources: number;
   rejectedSources: number;
-  patchTitle: string;
+  handoffTarget: string;
 }
 
 export async function batchRun({
@@ -49,13 +49,13 @@ export async function batchRun({
 async function summarizeRun(ask: string, runDir: string): Promise<BatchRunItem> {
   const trace = (await readFile(path.join(runDir, "trace.jsonl"), "utf8")).trim().split("\n");
   const sourceDecisions = JSON.parse(await readFile(path.join(runDir, "artifacts", "source-decisions.json"), "utf8")) as Array<{ decision: string }>;
-  const patch = await readFile(path.join(runDir, "harness-patch.md"), "utf8");
+  const resumePlan = JSON.parse(await readFile(path.join(runDir, "artifacts", "resume-plan.json"), "utf8")) as { nextTool?: string };
   return {
     ask,
     runDir,
     traceEvents: trace.length,
     savedSources: sourceDecisions.filter((source) => source.decision === "saved").length,
     rejectedSources: sourceDecisions.filter((source) => source.decision === "rejected").length,
-    patchTitle: patch.split("\n").find((line) => line.startsWith("Add ")) ?? "No patch title",
+    handoffTarget: resumePlan.nextTool ?? "external.critic",
   };
 }

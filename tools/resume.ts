@@ -56,8 +56,8 @@ export async function planResume({
   ];
   const resumePrompt = [
     `Resume ${runDir} from save point ${lastSavePoint?.name ?? "unknown"}.`,
-    `Start by implementing or evaluating ${nextTool}.`,
-    "Read task.json, session.jsonl, trace.jsonl, critic.md, harness-patch.md, and artifacts/source-map.json before acting.",
+    `Handoff target: ${nextTool}.`,
+    "Read task.json, session.jsonl, trace.jsonl, decision-log.md, artifacts/source-map.json, and artifacts/source-decisions.json before acting.",
     "Do not rely on hidden chain of thought; use the persisted decision log and artifacts.",
   ].join(" ");
   const plan: ResumePlan = {
@@ -72,8 +72,8 @@ export async function planResume({
     requiredArtifacts: [...new Set(requiredArtifacts)],
     stopConditions: [
       "stop if the artifact set cannot be read",
-      "stop if the next tool has already been implemented and smoked",
-      "stop if three consecutive runs produce the same next patch",
+      "stop if the run is already externally reviewed",
+      "stop if the evidence artifacts are insufficient for a concrete repo edit",
     ],
     artifact: path.join(runDir, "artifacts", "resume-plan.json"),
   };

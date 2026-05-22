@@ -12,7 +12,7 @@ try {
   await writeFile(path.join(runDir, "task.json"), `${JSON.stringify({ ask: "resume smoke" })}\n`);
   await writeFile(path.join(runDir, "trace.jsonl"), [
     { time: new Date().toISOString(), action: "task_loaded", reason: "smoke" },
-    { time: new Date().toISOString(), action: "harness_patch_proposed", reason: "smoke" },
+    { time: new Date().toISOString(), action: "run_completed", reason: "smoke" },
   ].map((entry) => JSON.stringify(entry)).join("\n") + "\n");
   await writeFile(path.join(runDir, "session.jsonl"), [
     { seq: 1, time: new Date().toISOString(), kind: "task" },
@@ -32,7 +32,7 @@ try {
   });
   const result = await runTool("resume.plan", {
     runDir,
-    nextTool: "source.compare",
+    nextTool: "external.critic",
     heartbeatIntervalMinutes: 1,
   }, "Exercise restart plan generation from persisted run files.") as {
     artifact: string;
@@ -43,11 +43,11 @@ try {
 
   assert.ok(events.some((event) => event.action === "tool_started" && event.tool === "resume.plan"));
   assert.ok(events.some((event) => event.action === "tool_completed" && event.tool === "resume.plan"));
-  assert.match(result.resumePrompt, /source\.compare/);
-  assert.equal(result.shouldResume, true);
+  assert.match(result.resumePrompt, /external\.critic/);
+  assert.equal(result.shouldResume, false);
   assert.equal(result.lastSavePoint, "frontier_planned");
   const artifact = JSON.parse(await readFile(result.artifact, "utf8"));
-  assert.equal(artifact.nextTool, "source.compare");
+  assert.equal(artifact.nextTool, "external.critic");
 
   console.log(JSON.stringify({ ok: true, smoke: "resume-plan" }, null, 2));
 } finally {

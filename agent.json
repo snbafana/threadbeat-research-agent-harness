@@ -14,8 +14,6 @@
     "frontier.next",
     "batch.run",
     "pi.loop",
-    "trace.critic",
-    "model.critic",
     "resume.plan",
     "artifact.write",
     "source.archive"
