@@ -1,4 +1,5 @@
 import { browserSnapshot } from "./browser.ts";
+import { pdfExtract } from "./pdf.ts";
 import { webFetch, webSearch, type FetchedPage, type SearchResult } from "./web.ts";
 
 export type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
@@ -128,6 +129,30 @@ export const researchTools: ResearchTool[] = [
         maxChars?: number;
       };
       return await browserSnapshot({ url, artifactDir, name, maxChars });
+    },
+  },
+  {
+    name: "pdf.extract",
+    description: "Preserve a PDF, compute a content hash, and extract reviewable text.",
+    parameters: {
+      type: "object",
+      properties: {
+        url: { type: "string" },
+        filePath: { type: "string" },
+        artifactDir: { type: "string" },
+        name: { type: "string" },
+        maxChars: { type: "number", default: 20000 },
+      },
+    },
+    async execute(args) {
+      const { url, filePath, artifactDir, name, maxChars = 20000 } = args as {
+        url?: string;
+        filePath?: string;
+        artifactDir?: string;
+        name?: string;
+        maxChars?: number;
+      };
+      return await pdfExtract({ url, filePath, artifactDir, name, maxChars });
     },
   },
   {
@@ -343,7 +368,7 @@ function critiqueTrace({ ask, queryPlan, sourceDecisions }: CriticInput): Critic
   if (thin.length > 0) labels.add("failed_to_save_artifact");
   if (highValue.length === 0) labels.add("trusted_weak_source");
 
-  const nextTool = thin.length > 0 ? "pdf.extract" : "pdf.extract";
+  const nextTool = "frontier.next";
   return {
     failureLabels: [...labels],
     assessment: [

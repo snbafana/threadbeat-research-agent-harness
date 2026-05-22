@@ -41,6 +41,7 @@ Current implemented tools:
 - `web.search`
 - `web.fetch`
 - `browser.snapshot`
+- `pdf.extract`
 - `source.classify`
 - `source.rank`
 - `trace.critic`
@@ -48,7 +49,6 @@ Current implemented tools:
 Next concrete tools:
 
 - `artifact.write`: persist raw/source outputs with content hashes and preview references.
-- `pdf.extract`: download PDF, preserve bytes, extract text, render first page when possible.
 - `translate.text`: preserve original and translated text with uncertainty notes.
 - `frontier.next`: read source decisions and propose next search leads.
 - `trace.critic`: read trace/session/artifacts and propose one harness patch.

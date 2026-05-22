@@ -193,10 +193,14 @@ async function inspectSearchResults(results: (SearchResult & { query: string })[
         reason: "Open promising search results before deciding whether to save or reject them.",
       });
       const fetched = await fetchWithSnapshotFallback(result);
-      const decision = await runTool("source.classify", { result, fetched }, "Classify source quality separately from fetching so source taste can be tuned.") as SourceDecisionRecord;
-      const rank = await runTool("source.rank", { result, fetched, decision }, "Rank saved and rejected sources so the critic can inspect research value.") as Record<string, unknown>;
+      const pdf = await extractPdfCandidate(result, fetched);
+      const sourceText = pdf && pdf.textChars > fetched.charCount
+        ? { url: result.url, title: fetched.title, text: pdf.text, charCount: pdf.textChars }
+        : fetched;
+      const decision = await runTool("source.classify", { result, fetched: sourceText }, "Classify source quality separately from fetching so source taste can be tuned.") as SourceDecisionRecord;
+      const rank = await runTool("source.rank", { result, fetched: sourceText, decision }, "Rank saved and rejected sources so the critic can inspect research value.") as Record<string, unknown>;
       const artifact = path.join(runDir, "artifacts", `source-${decisions.length + 1}.json`);
-      await writeJson(artifact, { result, fetched, decision, rank });
+      await writeJson(artifact, { result, fetched, pdf, decision, rank });
       event(decision.decision === "saved" ? "source_saved" : "source_rejected", {
         url: result.url,
         output: { ...decision, rank },
@@ -222,6 +226,52 @@ async function inspectSearchResults(results: (SearchResult & { query: string })[
     }
   }
   return decisions;
+}
+
+async function extractPdfCandidate(result: SearchResult, fetched: FetchedPage): Promise<null | {
+  text: string;
+  textChars: number;
+  pdfArtifact?: string;
+  textArtifact?: string;
+  warning?: string;
+}> {
+  if (!new URL(result.url).pathname.toLowerCase().endsWith(".pdf")) return null;
+  try {
+    const pdf = await runTool("pdf.extract", {
+      url: result.url,
+      artifactDir: path.join(runDir, "artifacts", "pdf"),
+      name: result.title,
+      maxChars: 20000,
+    }, "Preserve and extract PDF candidates so source evidence can be reviewed outside the model context.") as {
+      text: string;
+      textChars: number;
+      pdfArtifact?: string;
+      textArtifact?: string;
+      warning?: string;
+    };
+    event("extracted", {
+      url: result.url,
+      output: {
+        kind: "pdf",
+        textChars: pdf.textChars,
+        pdfArtifact: pdf.pdfArtifact,
+        textArtifact: pdf.textArtifact,
+        warning: pdf.warning,
+      },
+      artifact: pdf.pdfArtifact ?? pdf.textArtifact,
+      reason: "PDF candidate was preserved and extracted for source review.",
+      failure: pdf.textChars < 500 ? "failed_to_save_artifact" : null,
+    });
+    return pdf;
+  } catch (error) {
+    event("extracted", {
+      url: result.url,
+      output: { kind: "pdf", error: error instanceof Error ? error.message : String(error) },
+      reason: "PDF candidate extraction failed but the source triage should continue.",
+      failure: "failed_to_save_artifact",
+    });
+    return null;
+  }
 }
 
 async function fetchWithSnapshotFallback(result: SearchResult): Promise<FetchedPage> {

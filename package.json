@@ -6,7 +6,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "install:browsers": "playwright install chromium",
-    "smoke": "tsx scripts/tool-runner-smoke.ts && tsx scripts/pi-adapter-smoke.ts && tsx scripts/local-smoke.ts"
+    "smoke": "tsx scripts/tool-runner-smoke.ts && tsx scripts/pi-adapter-smoke.ts && tsx scripts/pdf-tool-smoke.ts && tsx scripts/local-smoke.ts"
   },
   "engines": {
     "node": ">=22"
