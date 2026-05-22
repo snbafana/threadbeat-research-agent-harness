@@ -11,6 +11,13 @@ The contract is the existing Threadbeat agent contract:
 - The agent writes trace/review/artifacts into the repo.
 - Threadbeat commits and pushes the task branch as `runs/{task_id}`.
 
+## Harness Direction
+
+Pi should become the inner agent loop, but this repo owns the durable research
+contract around tools, traces, artifacts, session reload, and reviewable failure
+labels. See `docs/pi-harness-guidelines.md` for the implementation standard and
+`docs/harness-study.md` for notes from Codex, Claude Code, opencode, Amp, and Pi.
+
 ## Local Smoke
 
 ```bash
