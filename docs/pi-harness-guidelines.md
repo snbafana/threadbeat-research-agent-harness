@@ -35,6 +35,7 @@ Persist these files per run or resumable session:
 - `session.jsonl`: normalized user, assistant, tool-call, tool-result, and harness messages.
 - `trace.jsonl`: reviewable event stream with reasons and failure labels.
 - `artifacts/`: raw fetched pages, PDFs, screenshots, extracted text, translations, source decisions, and final reports.
+- `*.meta.json`: hash, byte length, preview, source URL, and write timestamp for persisted artifacts.
 - `harness-patch.md`: one concrete proposed change after each run.
 - `artifacts/resume-plan.json`: heartbeat/restart instructions derived from persisted run files.
 
@@ -194,4 +195,5 @@ Keep this repo as the experimentation surface. Promote to Threadbeat core only w
 13. Add Pi loop smoke and typed pi.loop tool. Done.
 14. Add model-backed critic loop around the bounded trace critic. Done.
 15. Add resume planning for heartbeat and restart semantics. Done.
-16. Add artifact.write for hash-backed artifact persistence.
+16. Add artifact.write for hash-backed artifact persistence. Done.
+17. Add source.archive for normalized citation metadata.

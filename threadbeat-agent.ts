@@ -95,10 +95,23 @@ const sourceMap = {
   translations: queryTranslations,
   next_leads: frontier,
 };
-await writeJson(path.join(runDir, "artifacts", "source-map.json"), sourceMap);
+const sourceMapArtifact = await runTool("artifact.write", {
+  artifactDir: path.join(runDir, "artifacts"),
+  name: "source-map",
+  content: sourceMap,
+  format: "json",
+}, "Persist the source map with hash metadata and a bounded preview.") as {
+  artifact: string;
+  metadataArtifact: string;
+  sha256: string;
+};
 event("artifact_created", {
-  artifact: path.join(runDir, "artifacts", "source-map.json"),
-  reason: "Save the source map even in the stub run so reviewers can inspect the schema.",
+  artifact: sourceMapArtifact.artifact,
+  output: {
+    metadataArtifact: sourceMapArtifact.metadataArtifact,
+    sha256: sourceMapArtifact.sha256,
+  },
+  reason: "Save the source map with hash metadata so reviewers can inspect and verify the schema.",
 });
 
 const decisionLog = `# Decision Log

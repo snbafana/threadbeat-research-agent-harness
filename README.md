@@ -37,6 +37,7 @@ trace/review files. In Threadbeat, the worker commits these run artifacts to a
 - `runs/<run_id>/critic.md`: failure labels and next harness changes.
 - `runs/<run_id>/harness-patch.md`: concrete edits to prompts/schema/tools.
 - `runs/<run_id>/artifacts/resume-plan.json`: heartbeat/restart prompt and command.
+- `runs/<run_id>/artifacts/*.meta.json`: content hash, byte count, and preview metadata.
 - Git diff between runs: macro changes in the harness.
 
 Promote only repeated patterns into Threadbeat core. Until then, keep this as an

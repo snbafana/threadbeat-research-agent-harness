@@ -39,6 +39,7 @@ for (const file of [
   "artifacts/source-1.json",
   "artifacts/index.json",
   "artifacts/source-map.json",
+  "artifacts/source-map.meta.json",
   "artifacts/search-results.json",
   "artifacts/source-decisions.json",
   "artifacts/resume-plan.json",
@@ -62,6 +63,7 @@ assert.ok(trace.some((event) => event.action === "tool_completed" && event.tool 
 assert.ok(trace.some((event) => event.action === "tool_completed" && event.tool === "source.classify"));
 assert.ok(trace.some((event) => event.action === "tool_completed" && event.tool === "source.rank"));
 assert.ok(trace.some((event) => event.action === "tool_completed" && event.tool === "frontier.next"));
+assert.ok(trace.some((event) => event.action === "tool_completed" && event.tool === "artifact.write"));
 assert.ok(trace.some((event) => event.action === "tool_completed" && event.tool === "model.critic"));
 assert.ok(trace.some((event) => event.action === "tool_completed" && event.tool === "resume.plan"));
 assert.ok(trace.some((event) => event.action === "resume_planned"));
@@ -78,12 +80,14 @@ assert.match(session, /"kind":"tool_call"/);
 assert.match(session, /"kind":"save_point"/);
 assert.match(session, /"kind":"resume_plan"/);
 const sourceMap = JSON.parse(readFileSync(path.join(runDir, "artifacts/source-map.json"), "utf8"));
+const sourceMapMetadata = JSON.parse(readFileSync(path.join(runDir, "artifacts/source-map.meta.json"), "utf8"));
 assert.ok(sourceMap.next_leads.length > 0, "source map needs planned frontier leads");
 assert.ok(sourceMap.translations.length > 0, "source map needs preserved query translations");
+assert.match(sourceMapMetadata.sha256, /^[a-f0-9]{64}$/);
 const patch = readFileSync(path.join(runDir, "harness-patch.md"), "utf8");
-assert.match(patch, /artifact\.write/);
+assert.match(patch, /source\.archive/);
 const resumePlan = JSON.parse(readFileSync(path.join(runDir, "artifacts/resume-plan.json"), "utf8"));
-assert.match(resumePlan.resumePrompt, /artifact\.write/);
+assert.match(resumePlan.resumePrompt, /source\.archive/);
 
 console.log(JSON.stringify({
   ok: true,

@@ -51,10 +51,11 @@ Current implemented tools:
 - `trace.critic`
 - `model.critic`
 - `resume.plan`
+- `artifact.write`
 
 Next concrete tools:
 
-- `artifact.write`: persist raw/source outputs with content hashes and preview references.
+- `source.archive`: normalize raw/source outputs with content hashes and citation metadata.
 
 Longer-term adapters:
 

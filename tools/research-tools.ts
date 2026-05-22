@@ -1,5 +1,6 @@
 import { Agent } from "@earendil-works/pi-agent-core";
 import { fauxAssistantMessage, fauxText, fauxToolCall, registerFauxProvider } from "@earendil-works/pi-ai";
+import { writeArtifact } from "./artifact.ts";
 import { browserSnapshot } from "./browser.ts";
 import { batchRun } from "./batch.ts";
 import { pdfExtract } from "./pdf.ts";
@@ -343,6 +344,31 @@ export const researchTools: ResearchTool[] = [
       return await planResume({ runDir, nextTool, heartbeatIntervalMinutes });
     },
   },
+  {
+    name: "artifact.write",
+    description: "Persist a reviewable artifact plus sha256 metadata and a bounded preview.",
+    parameters: {
+      type: "object",
+      required: ["artifactDir", "name", "content"],
+      properties: {
+        artifactDir: { type: "string" },
+        name: { type: "string" },
+        content: {},
+        format: { type: "string", enum: ["json", "text"] },
+        sourceUrl: { type: "string" },
+      },
+    },
+    async execute(args) {
+      const { artifactDir, name, content, format, sourceUrl } = args as {
+        artifactDir: string;
+        name: string;
+        content: JsonValue;
+        format?: "json" | "text";
+        sourceUrl?: string;
+      };
+      return await writeArtifact({ artifactDir, name, content, format, sourceUrl });
+    },
+  },
 ];
 
 export function createToolRunner({
@@ -507,7 +533,7 @@ function critiqueTrace({ ask, queryPlan, sourceDecisions }: CriticInput): Critic
   if (thin.length > 0) labels.add("failed_to_save_artifact");
   if (highValue.length === 0) labels.add("trusted_weak_source");
 
-  const nextTool = "artifact.write";
+  const nextTool = "source.archive";
   return {
     failureLabels: [...labels],
     assessment: [
