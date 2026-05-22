@@ -89,10 +89,12 @@ const decisionLog = `# Decision Log
 Task: ${task.ask}
 
 - Started with a manifest-declared tool harness instead of hidden web calls.
-- Planned query expansion before extraction because search language is a likely failure mode.
+- Planned query expansion with query.expand because search language is a likely failure mode.
 - Ran web.search over the initial query plan.
 - Opened a bounded number of result URLs with web.fetch.
 - Classified sources with source.classify and saved or rejected them with explicit reasons.
+- Ranked source value with source.rank.
+- Generated critique and next patch with trace.critic.
 `;
 await writeFile(path.join(runDir, "decision-log.md"), decisionLog);
 event("artifact_created", {
@@ -100,44 +102,44 @@ event("artifact_created", {
   reason: "Expose explicit rationale without depending on hidden model thoughts.",
 });
 
+const criticOutput = await runTool("trace.critic", {
+  ask: task.ask,
+  queryPlan,
+  sourceDecisions,
+}, "Critic reads saved trace outputs and proposes one concrete harness patch.") as {
+  failureLabels: string[];
+  assessment: string;
+  patchTitle: string;
+  patchRecommendation: string;
+  nextTool: string;
+};
+
 const critic = `# Critic Report
 
 Failure labels:
 
-- bad_query_language
-- ${sourceDecisions.some((source) => source.decision === "saved") ? "stopped_too_early" : "missed_primary_source"}
+${criticOutput.failureLabels.map((label) => `- ${label}`).join("\n")}
 
 Assessment:
 
-This run uses search/fetch tools but still lacks browser screenshots, PDF
-handling, translation, and a model critic over the trace.
+${criticOutput.assessment}
 
 Next harness change:
 
-Add browser/PDF/translation tools and replace the static critic with a model
-critic that reads trace.jsonl plus source-decisions.json.
+${criticOutput.patchRecommendation}
 `;
 await writeFile(path.join(runDir, "critic.md"), critic);
 event("critic_note", {
-  output: ["bad_query_language", "no_clear_next_lead"],
+  output: criticOutput.failureLabels,
   artifact: path.join(runDir, "critic.md"),
-  reason: "The critic names the first harness limitation before the next run.",
+  reason: "trace.critic names the first harness limitation before the next run.",
 });
 
 const patch = `# Harness Patch Proposal
 
-Change one thing next:
+${criticOutput.patchTitle}
 
-Add a browser/PDF/translation provider step that must emit:
-
-- searched query
-- opened URL
-- screenshot or DOM/text snapshot path
-- save/reject decision
-- follow-up lead
-
-Keep the provider implementation inside this agent repo until two runs prove the
-same code needs to move into Threadbeat core.
+${criticOutput.patchRecommendation}
 `;
 await writeFile(path.join(runDir, "harness-patch.md"), patch);
 event("harness_patch_proposed", {
@@ -145,7 +147,8 @@ event("harness_patch_proposed", {
   reason: "Make the next implementation step concrete and reviewable.",
 });
 await appendSession("critic", {
-  failures: ["bad_query_language", sourceDecisions.some((source) => source.decision === "saved") ? "stopped_too_early" : "missed_primary_source"],
+  failures: criticOutput.failureLabels,
+  nextTool: criticOutput.nextTool,
   artifacts: ["critic.md", "harness-patch.md"],
 });
 

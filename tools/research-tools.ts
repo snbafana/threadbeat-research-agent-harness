@@ -33,6 +33,31 @@ interface RankedSource {
   followUp: string[];
 }
 
+interface CriticInput {
+  ask: string;
+  queryPlan: string[];
+  sourceDecisions: Array<{
+    title: string;
+    url: string;
+    decision: "saved" | "rejected";
+    reason: string;
+    failure?: string | null;
+    rank?: {
+      score?: number;
+      value?: "high" | "medium" | "low";
+      followUp?: string[];
+    };
+  }>;
+}
+
+interface CriticOutput {
+  failureLabels: string[];
+  assessment: string;
+  patchTitle: string;
+  patchRecommendation: string;
+  nextTool: string;
+}
+
 export const researchTools: ResearchTool[] = [
   {
     name: "query.expand",
@@ -112,6 +137,22 @@ export const researchTools: ResearchTool[] = [
     async execute(args) {
       const { result, fetched, decision } = args as { result: SearchResult; fetched: FetchedPage; decision: SourceDecision };
       return rankSource(result, fetched, decision);
+    },
+  },
+  {
+    name: "trace.critic",
+    description: "Review the trace-level run outputs and propose one concrete harness improvement.",
+    parameters: {
+      type: "object",
+      required: ["ask", "queryPlan", "sourceDecisions"],
+      properties: {
+        ask: { type: "string" },
+        queryPlan: { type: "array" },
+        sourceDecisions: { type: "array" },
+      },
+    },
+    async execute(args) {
+      return critiqueTrace(args as unknown as CriticInput);
     },
   },
 ];
@@ -262,6 +303,42 @@ function rankSource(result: SearchResult, fetched: FetchedPage, decision: Source
     value: bounded >= 70 ? "high" : bounded >= 40 ? "medium" : "low",
     reasons: reasons.length ? reasons : ["weak explicit source-quality signals"],
     followUp,
+  };
+}
+
+function critiqueTrace({ ask, queryPlan, sourceDecisions }: CriticInput): CriticOutput {
+  const saved = sourceDecisions.filter((source) => source.decision === "saved");
+  const rejected = sourceDecisions.filter((source) => source.decision === "rejected");
+  const highValue = saved.filter((source) => source.rank?.value === "high");
+  const thin = sourceDecisions.filter((source) => source.failure === "failed_to_save_artifact" || (source.rank?.score ?? 0) < 40);
+  const labels = new Set<string>();
+
+  if (queryPlan.length < 4) labels.add("bad_query_language");
+  if (saved.length === 0) labels.add("missed_primary_source");
+  if (saved.length > 0) labels.add("stopped_too_early");
+  if (thin.length > 0) labels.add("failed_to_save_artifact");
+  if (highValue.length === 0) labels.add("trusted_weak_source");
+
+  const nextTool = thin.length > 0 ? "browser.snapshot" : "pdf.extract";
+  return {
+    failureLabels: [...labels],
+    assessment: [
+      `Task: ${ask}`,
+      `Queries: ${queryPlan.length}. Saved sources: ${saved.length}. Rejected sources: ${rejected.length}.`,
+      highValue.length
+        ? `Best signal: ${highValue[0]?.title} (${highValue[0]?.url}).`
+        : "No clearly high-value source was established by the current scoring pass.",
+      thin.length
+        ? "At least one source needs a stronger capture path because extraction or rank was weak."
+        : "The next improvement should deepen source preservation beyond HTML text.",
+    ].join("\n"),
+    patchTitle: `Add ${nextTool} to close the next research gap`,
+    patchRecommendation: [
+      `Implement ${nextTool} as a typed tool.`,
+      "It must emit tool lifecycle events, save a raw artifact, write a bounded trace summary, and update source decisions with a follow-up lead.",
+      "Keep it inside this harness until repeated runs prove the interface belongs in Threadbeat core.",
+    ].join("\n"),
+    nextTool,
   };
 }
 

@@ -7,7 +7,8 @@
     "web.search",
     "web.fetch",
     "source.classify",
-    "source.rank"
+    "source.rank",
+    "trace.critic"
   ],
   "traceSchema": "schemas/trace-event.schema.json",
   "sessionPolicy": {

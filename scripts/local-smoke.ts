@@ -57,6 +57,7 @@ assert.ok(trace.some((event) => event.action === "tool_started" && event.tool ==
 assert.ok(trace.some((event) => event.action === "tool_completed" && event.tool === "web.fetch"));
 assert.ok(trace.some((event) => event.action === "tool_completed" && event.tool === "source.classify"));
 assert.ok(trace.some((event) => event.action === "tool_completed" && event.tool === "source.rank"));
+assert.ok(trace.some((event) => event.action === "tool_completed" && event.tool === "trace.critic"));
 assert.ok(trace.some((event) => event.action === "save_point"));
 assert.ok(trace.some((event) => event.action === "searched"));
 assert.ok(trace.some((event) => event.action === "opened_url"));

@@ -42,6 +42,7 @@ Current implemented tools:
 - `web.fetch`
 - `source.classify`
 - `source.rank`
+- `trace.critic`
 
 Next concrete tools:
 
