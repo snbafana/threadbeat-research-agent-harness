@@ -113,7 +113,7 @@ Task: ${task.ask}
 - Classified sources with source.classify and saved or rejected them with explicit reasons.
 - Ranked source value with source.rank.
 - Planned next leads with frontier.next.
-- Generated critique and next patch with trace.critic.
+- Generated critique and next patch with model.critic.
 `;
 await writeFile(path.join(runDir, "decision-log.md"), decisionLog);
 event("artifact_created", {
@@ -121,16 +121,17 @@ event("artifact_created", {
   reason: "Expose explicit rationale without depending on hidden model thoughts.",
 });
 
-const criticOutput = await runTool("trace.critic", {
+const criticOutput = await runTool("model.critic", {
   ask: task.ask,
   queryPlan,
   sourceDecisions,
-}, "Critic reads saved trace outputs and proposes one concrete harness patch.") as {
+}, "Pi-backed critic reads saved trace outputs and proposes one concrete harness patch.") as {
   failureLabels: string[];
   assessment: string;
   patchTitle: string;
   patchRecommendation: string;
   nextTool: string;
+  modelEventCount?: number;
 };
 
 const critic = `# Critic Report
@@ -149,9 +150,12 @@ ${criticOutput.patchRecommendation}
 `;
 await writeFile(path.join(runDir, "critic.md"), critic);
 event("critic_note", {
-  output: criticOutput.failureLabels,
+  output: {
+    failureLabels: criticOutput.failureLabels,
+    modelEventCount: criticOutput.modelEventCount,
+  },
   artifact: path.join(runDir, "critic.md"),
-  reason: "trace.critic names the first harness limitation before the next run.",
+  reason: "model.critic names the first harness limitation before the next run.",
 });
 
 const patch = `# Harness Patch Proposal

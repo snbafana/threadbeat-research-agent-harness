@@ -191,4 +191,5 @@ Keep this repo as the experimentation surface. Promote to Threadbeat core only w
 11. Add translation preservation for local-language queries. Done.
 12. Add batch-run trajectory tooling. Done.
 13. Add Pi loop smoke and typed pi.loop tool. Done.
-14. Add stronger source frontier expansion and model-backed critic.
+14. Add model-backed critic loop around the bounded trace critic. Done.
+15. Add resume planning for heartbeat and restart semantics.

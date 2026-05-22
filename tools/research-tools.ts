@@ -1,6 +1,9 @@
+import { Agent } from "@earendil-works/pi-agent-core";
+import { fauxAssistantMessage, fauxText, fauxToolCall, registerFauxProvider } from "@earendil-works/pi-ai";
 import { browserSnapshot } from "./browser.ts";
 import { batchRun } from "./batch.ts";
 import { pdfExtract } from "./pdf.ts";
+import { createPiTools } from "./pi-adapter.ts";
 import { runPiLoop } from "./pi-loop.ts";
 import { translateText } from "./translation.ts";
 import { webFetch, webSearch, type FetchedPage, type SearchResult } from "./web.ts";
@@ -302,6 +305,22 @@ export const researchTools: ResearchTool[] = [
       return critiqueTrace(args as unknown as CriticInput);
     },
   },
+  {
+    name: "model.critic",
+    description: "Run the trace critic through a deterministic Pi Agent model loop and return the bounded patch proposal.",
+    parameters: {
+      type: "object",
+      required: ["ask", "queryPlan", "sourceDecisions"],
+      properties: {
+        ask: { type: "string" },
+        queryPlan: { type: "array" },
+        sourceDecisions: { type: "array" },
+      },
+    },
+    async execute(args) {
+      return await modelCritique(args as unknown as CriticInput);
+    },
+  },
 ];
 
 export function createToolRunner({
@@ -466,7 +485,7 @@ function critiqueTrace({ ask, queryPlan, sourceDecisions }: CriticInput): Critic
   if (thin.length > 0) labels.add("failed_to_save_artifact");
   if (highValue.length === 0) labels.add("trusted_weak_source");
 
-  const nextTool = "model.critic";
+  const nextTool = "resume.plan";
   return {
     failureLabels: [...labels],
     assessment: [
@@ -487,6 +506,75 @@ function critiqueTrace({ ask, queryPlan, sourceDecisions }: CriticInput): Critic
     ].join("\n"),
     nextTool,
   };
+}
+
+async function modelCritique(input: CriticInput): Promise<CriticOutput & {
+  modelMode: "faux";
+  modelEvents: string[];
+  modelEventCount: number;
+  pendingResponses: number;
+}> {
+  const faux = registerFauxProvider();
+  const modelEvents: string[] = [];
+
+  try {
+    faux.setResponses([
+      fauxAssistantMessage(
+        [
+          fauxText("I will inspect the trace with the bounded critic tool."),
+          fauxToolCall("trace.critic", input, { id: "model-critic-tool-call-1" }),
+        ],
+        { stopReason: "toolUse" },
+      ),
+      fauxAssistantMessage("The patch proposal is ready."),
+    ]);
+
+    const tools = createPiTools({
+      tools: [
+        {
+          name: "trace.critic",
+          description: "Bounded trace critic used by the Pi-backed model critic.",
+          parameters: {
+            type: "object",
+            required: ["ask", "queryPlan", "sourceDecisions"],
+            properties: {
+              ask: { type: "string" },
+              queryPlan: { type: "array" },
+              sourceDecisions: { type: "array" },
+            },
+          },
+          async execute(args: Record<string, unknown>) {
+            return critiqueTrace(args as unknown as CriticInput);
+          },
+        },
+      ],
+    });
+
+    const agent = new Agent({
+      initialState: {
+        systemPrompt: "You are a bounded harness critic. Always use trace.critic before proposing a patch.",
+        model: faux.getModel(),
+        tools,
+        messages: [],
+      },
+    });
+
+    agent.subscribe((event) => {
+      modelEvents.push(event.type);
+    });
+
+    await agent.prompt("Review this research harness trace and propose the next implementation patch.");
+    const bounded = critiqueTrace(input);
+    return {
+      ...bounded,
+      modelMode: "faux",
+      modelEvents,
+      modelEventCount: modelEvents.length,
+      pendingResponses: faux.getPendingResponseCount(),
+    };
+  } finally {
+    faux.unregister();
+  }
 }
 
 function nextFrontier({ ask, queryPlan, sourceDecisions }: FrontierInput): FrontierLead[] {

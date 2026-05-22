@@ -49,11 +49,12 @@ Current implemented tools:
 - `batch.run`
 - `pi.loop`
 - `trace.critic`
+- `model.critic`
 
 Next concrete tools:
 
 - `artifact.write`: persist raw/source outputs with content hashes and preview references.
-- `trace.critic`: read trace/session/artifacts and propose one harness patch.
+- `resume.plan`: turn run/session artifacts into explicit heartbeat or restart instructions.
 
 Longer-term adapters:
 

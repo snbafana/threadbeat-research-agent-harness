@@ -14,7 +14,8 @@
     "frontier.next",
     "batch.run",
     "pi.loop",
-    "trace.critic"
+    "trace.critic",
+    "model.critic"
   ],
   "traceSchema": "schemas/trace-event.schema.json",
   "sessionPolicy": {
