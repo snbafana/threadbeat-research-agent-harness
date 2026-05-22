@@ -1,3 +1,5 @@
+import { spawnSync } from "node:child_process";
+
 const USER_AGENT = "threadbeat-research-agent/0.1 (+https://github.com/snbafana/threadbeat-research-agent-harness)";
 
 export interface SearchResult {
@@ -58,7 +60,29 @@ async function fetchText(url: string, options: { accept?: string } = {}): Promis
       if (attempt < 3) await sleep(500 * attempt);
     }
   }
+  const curlText = fetchTextWithCurl(url, options);
+  if (curlText !== null) return curlText;
   throw lastError instanceof Error ? lastError : new Error(String(lastError));
+}
+
+function fetchTextWithCurl(url: string, options: { accept?: string }): string | null {
+  const result = spawnSync("curl", [
+    "--fail",
+    "--location",
+    "--silent",
+    "--show-error",
+    "--max-time",
+    "30",
+    "--header",
+    `accept: ${options.accept ?? "text/html,application/xhtml+xml,application/xml;q=0.9,text/plain;q=0.8,*/*;q=0.7"}`,
+    "--header",
+    `user-agent: ${USER_AGENT}`,
+    url,
+  ], {
+    encoding: "utf8",
+    maxBuffer: 20 * 1024 * 1024,
+  });
+  return result.status === 0 ? result.stdout : null;
 }
 
 function parseDuckDuckGo(html: string): SearchResult[] {
