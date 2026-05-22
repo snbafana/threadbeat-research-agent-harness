@@ -32,14 +32,23 @@ export async function webFetch(url: string, { maxChars = 12000 }: { maxChars?: n
 }
 
 async function fetchText(url: string): Promise<string> {
-  const response = await fetch(url, {
-    headers: {
-      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,text/plain;q=0.8,*/*;q=0.7",
-      "user-agent": USER_AGENT,
-    },
-  });
-  if (!response.ok) throw new Error(`fetch failed ${response.status}: ${url}`);
-  return await response.text();
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      const response = await fetch(url, {
+        headers: {
+          "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,text/plain;q=0.8,*/*;q=0.7",
+          "user-agent": USER_AGENT,
+        },
+      });
+      if (!response.ok) throw new Error(`fetch failed ${response.status}: ${url}`);
+      return await response.text();
+    } catch (error) {
+      lastError = error;
+      if (attempt < 3) await sleep(500 * attempt);
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error(String(lastError));
 }
 
 function parseDuckDuckGo(html: string): SearchResult[] {
@@ -93,6 +102,10 @@ function textBetween(value: string, start: RegExp, end: RegExp): string {
 
 function cleanText(value: string): string {
   return decodeHtml(value).replace(/\s+/g, " ").trim();
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function decodeHtml(value: string): string {
