@@ -10,6 +10,10 @@
       "enum": [
         "task_loaded",
         "query_planned",
+        "tool_started",
+        "tool_completed",
+        "searched",
+        "opened_url",
         "source_saved",
         "source_rejected",
         "extracted",
@@ -20,6 +24,7 @@
         "run_completed"
       ]
     },
+    "tool": { "type": "string" },
     "url": { "type": "string" },
     "input": {},
     "output": {},

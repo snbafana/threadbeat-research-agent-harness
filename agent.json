@@ -1,0 +1,16 @@
+{
+  "id": "threadbeat-research-agent",
+  "name": "Threadbeat Research Agent",
+  "entrypoint": "threadbeat-agent.mjs",
+  "enabledTools": [
+    "web.search",
+    "web.fetch",
+    "source.classify"
+  ],
+  "traceSchema": "schemas/trace-event.schema.json",
+  "sessionPolicy": {
+    "persistEveryToolCall": true,
+    "persistArtifacts": true,
+    "savePoint": "after-tool-result"
+  }
+}

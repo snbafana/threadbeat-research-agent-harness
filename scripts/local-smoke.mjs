@@ -35,7 +35,10 @@ for (const file of [
   "critic.md",
   "harness-patch.md",
   "task.json",
+  "artifacts/source-1.json",
   "artifacts/source-map.json",
+  "artifacts/search-results.json",
+  "artifacts/source-decisions.json",
 ]) {
   assert.ok(existsSync(path.join(runDir, file)), `missing ${file}`);
 }
@@ -44,9 +47,16 @@ const trace = readFileSync(path.join(runDir, "trace.jsonl"), "utf8")
   .trim()
   .split("\n")
   .map((line) => JSON.parse(line));
+const sourceDecisions = JSON.parse(readFileSync(path.join(runDir, "artifacts/source-decisions.json"), "utf8"));
 assert.ok(trace.some((event) => event.action === "task_loaded"));
 assert.ok(trace.some((event) => event.action === "critic_note"));
+assert.ok(trace.some((event) => event.action === "tool_started" && event.tool === "web.search"));
+assert.ok(trace.some((event) => event.action === "tool_completed" && event.tool === "web.fetch"));
+assert.ok(trace.some((event) => event.action === "tool_completed" && event.tool === "source.classify"));
+assert.ok(trace.some((event) => event.action === "searched"));
+assert.ok(trace.some((event) => event.action === "opened_url"));
 assert.ok(trace.every((event) => event.reason), "every trace event needs a reviewable reason");
+assert.ok(sourceDecisions.every((source) => source.textChars > 0 || source.decision === "rejected"), "empty extracted pages must not be saved");
 
 console.log(JSON.stringify({
   ok: true,
