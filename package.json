@@ -6,7 +6,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "install:browsers": "playwright install chromium",
-    "smoke": "tsx scripts/tool-runner-smoke.ts && tsx scripts/pi-adapter-smoke.ts && tsx scripts/pdf-tool-smoke.ts && tsx scripts/batch-run-smoke.ts && tsx scripts/local-smoke.ts"
+    "smoke": "tsx scripts/tool-runner-smoke.ts && tsx scripts/pi-adapter-smoke.ts && tsx scripts/pi-loop-smoke.ts && tsx scripts/pdf-tool-smoke.ts && tsx scripts/batch-run-smoke.ts && tsx scripts/local-smoke.ts"
   },
   "engines": {
     "node": ">=22"
@@ -16,5 +16,10 @@
     "playwright": "^1.60.0",
     "tsx": "^4.22.3",
     "typescript": "^6.0.3"
+  },
+  "dependencies": {
+    "@earendil-works/pi-agent-core": "^0.75.4",
+    "@earendil-works/pi-ai": "^0.75.4",
+    "typebox": "^1.1.38"
   }
 }

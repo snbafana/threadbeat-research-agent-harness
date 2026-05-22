@@ -13,6 +13,7 @@
     "source.rank",
     "frontier.next",
     "batch.run",
+    "pi.loop",
     "trace.critic"
   ],
   "traceSchema": "schemas/trace-event.schema.json",

@@ -17,7 +17,7 @@ export interface PiTool {
   parameters: ToolSchema;
   execute(
     toolCallId: string,
-    params: Record<string, unknown>,
+    params: unknown,
     signal?: AbortSignal,
     onUpdate?: (partialResult: PiToolResult) => void,
   ): Promise<PiToolResult>;
@@ -36,14 +36,15 @@ export function createPiTools({
     description: tool.description,
     parameters: tool.parameters,
     async execute(toolCallId, params, signal, onUpdate) {
+      const args = params && typeof params === "object" ? params as Record<string, unknown> : {};
       if (signal?.aborted) throw new Error(`aborted before ${tool.name}`);
       onUpdate?.({
         content: [{ type: "text", text: `Running ${tool.name}` }],
         details: { toolCallId, tool: tool.name, status: "running" },
       });
       const output = runTool
-        ? await runTool(tool.name, params, `Pi tool call ${toolCallId} invoked ${tool.name}.`)
-        : await tool.execute(params);
+        ? await runTool(tool.name, args, `Pi tool call ${toolCallId} invoked ${tool.name}.`)
+        : await tool.execute(args);
       const details = {
         toolCallId,
         tool: tool.name,

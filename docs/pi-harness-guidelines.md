@@ -190,4 +190,5 @@ Keep this repo as the experimentation surface. Promote to Threadbeat core only w
 10. Add frontier-next leads from source decisions. Done.
 11. Add translation preservation for local-language queries. Done.
 12. Add batch-run trajectory tooling. Done.
-13. Add Pi loop smoke and stronger source frontier expansion.
+13. Add Pi loop smoke and typed pi.loop tool. Done.
+14. Add stronger source frontier expansion and model-backed critic.

@@ -1,6 +1,7 @@
 import { browserSnapshot } from "./browser.ts";
 import { batchRun } from "./batch.ts";
 import { pdfExtract } from "./pdf.ts";
+import { runPiLoop } from "./pi-loop.ts";
 import { translateText } from "./translation.ts";
 import { webFetch, webSearch, type FetchedPage, type SearchResult } from "./web.ts";
 
@@ -271,6 +272,21 @@ export const researchTools: ResearchTool[] = [
     },
   },
   {
+    name: "pi.loop",
+    description: "Run a deterministic Pi Agent loop against the research tool adapter using a faux provider.",
+    parameters: {
+      type: "object",
+      required: ["ask"],
+      properties: {
+        ask: { type: "string" },
+      },
+    },
+    async execute(args) {
+      const { ask } = args as { ask: string };
+      return await runPiLoop({ ask });
+    },
+  },
+  {
     name: "trace.critic",
     description: "Review the trace-level run outputs and propose one concrete harness improvement.",
     parameters: {
@@ -450,7 +466,7 @@ function critiqueTrace({ ask, queryPlan, sourceDecisions }: CriticInput): Critic
   if (thin.length > 0) labels.add("failed_to_save_artifact");
   if (highValue.length === 0) labels.add("trusted_weak_source");
 
-  const nextTool = "pi.loop";
+  const nextTool = "model.critic";
   return {
     failureLabels: [...labels],
     assessment: [

@@ -47,6 +47,7 @@ Current implemented tools:
 - `source.rank`
 - `frontier.next`
 - `batch.run`
+- `pi.loop`
 - `trace.critic`
 
 Next concrete tools:
