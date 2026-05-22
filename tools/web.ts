@@ -14,9 +14,15 @@ export interface FetchedPage {
 }
 
 export async function webSearch(query: string, { limit = 5 }: { limit?: number } = {}): Promise<SearchResult[]> {
-  const url = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
-  const html = await fetchText(url);
-  return parseDuckDuckGo(html).slice(0, limit);
+  try {
+    const url = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
+    const html = await fetchText(url);
+    return parseDuckDuckGo(html).slice(0, limit);
+  } catch {
+    const url = `https://www.bing.com/search?q=${encodeURIComponent(query)}`;
+    const html = await fetchText(url);
+    return parseBing(html).slice(0, limit);
+  }
 }
 
 export async function webFetch(url: string, { maxChars = 12000 }: { maxChars?: number } = {}): Promise<FetchedPage> {
@@ -77,6 +83,35 @@ function normalizeDuckDuckGoUrl(href: string): string {
     const parsed = new URL(href, "https://duckduckgo.com");
     const uddg = parsed.searchParams.get("uddg");
     if (uddg) return decodeURIComponent(uddg);
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") return parsed.toString();
+  } catch {
+    return "";
+  }
+  return "";
+}
+
+function parseBing(html: string): SearchResult[] {
+  const results: SearchResult[] = [];
+  const blocks = html.split(/<li[^>]+class="b_algo"[^>]*>/i).slice(1);
+  for (const block of blocks) {
+    const href = block.match(/<a[^>]+href="([^"]+)"/i)?.[1] ?? "";
+    const title = block.match(/<a[^>]*>([\s\S]*?)<\/a>/i)?.[1] ?? "";
+    const snippet = block.match(/<p[^>]*>([\s\S]*?)<\/p>/i)?.[1] ?? "";
+    const url = normalizeHttpUrl(decodeHtml(href));
+    if (!url) continue;
+    results.push({
+      title: cleanText(title),
+      url,
+      snippet: cleanText(snippet),
+    });
+  }
+  return dedupeByUrl(results);
+}
+
+function normalizeHttpUrl(href: string): string {
+  if (!href) return "";
+  try {
+    const parsed = new URL(href);
     if (parsed.protocol === "http:" || parsed.protocol === "https:") return parsed.toString();
   } catch {
     return "";
