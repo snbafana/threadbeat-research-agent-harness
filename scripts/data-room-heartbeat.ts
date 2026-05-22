@@ -36,9 +36,12 @@ const runTool = createToolRunner({
 });
 
 const knownUrls = new Set(state.people.map((person) => person.sourceUrl));
-const results = await searchCandidateQueries(query);
-const candidate = results.find((result) => !knownUrls.has(result.url) && extractPersonName(result))
-  ?? results.find((result) => !knownUrls.has(result.url));
+const knownNames = new Set(state.people.map((person) => person.name.toLowerCase()));
+const results = await searchCandidateQueries(query, knownNames, knownUrls);
+const candidate = results.find((result) => {
+  const name = extractPersonName(result);
+  return name && !knownUrls.has(result.url) && !knownNames.has(name.toLowerCase());
+});
 if (!candidate) throw new Error("web.search returned no candidate people");
 const name = extractPersonName(candidate);
 if (!name) throw new Error(`web.search returned no person-like candidate: ${candidate.title}`);
@@ -68,7 +71,7 @@ console.log(JSON.stringify({
   added: person,
 }, null, 2));
 
-async function searchCandidateQueries(baseQuery: string): Promise<SearchResult[]> {
+async function searchCandidateQueries(baseQuery: string, knownNames: Set<string>, knownUrls: Set<string>): Promise<SearchResult[]> {
   const queries = [
     `${baseQuery} person researcher founder`,
     "Eliezer Yudkowsky AI safety researcher",
@@ -96,7 +99,10 @@ async function searchCandidateQueries(baseQuery: string): Promise<SearchResult[]
       seen.add(result.url);
       merged.push(result);
     }
-    if (merged.some((result) => extractPersonName(result))) break;
+    if (merged.some((result) => {
+      const name = extractPersonName(result);
+      return name && !knownUrls.has(result.url) && !knownNames.has(name.toLowerCase());
+    })) break;
   }
 
   return merged;
