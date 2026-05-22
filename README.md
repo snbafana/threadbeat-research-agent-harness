@@ -17,6 +17,8 @@ Pi should become the inner agent loop, but this repo owns the durable research
 contract around tools, traces, artifacts, session reload, and reviewable failure
 labels. See `docs/pi-harness-guidelines.md` for the implementation standard and
 `docs/harness-study.md` for notes from Codex, Claude Code, opencode, Amp, and Pi.
+See `docs/hermes-inspiration.md` for the uptime, tool registry, sandbox, and
+self-improvement ideas worth copying from Hermes Agent.
 
 ## Local Smoke
 

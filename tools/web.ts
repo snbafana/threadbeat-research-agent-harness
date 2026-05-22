@@ -1,12 +1,25 @@
 const USER_AGENT = "threadbeat-research-agent/0.1 (+https://github.com/snbafana/threadbeat-research-agent-harness)";
 
-export async function webSearch(query, { limit = 5 } = {}) {
+export interface SearchResult {
+  title: string;
+  url: string;
+  snippet: string;
+}
+
+export interface FetchedPage {
+  url: string;
+  title: string;
+  text: string;
+  charCount: number;
+}
+
+export async function webSearch(query: string, { limit = 5 }: { limit?: number } = {}): Promise<SearchResult[]> {
   const url = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
   const html = await fetchText(url);
   return parseDuckDuckGo(html).slice(0, limit);
 }
 
-export async function webFetch(url, { maxChars = 12000 } = {}) {
+export async function webFetch(url: string, { maxChars = 12000 }: { maxChars?: number } = {}): Promise<FetchedPage> {
   const html = await fetchText(url);
   const title = textBetween(html, /<title[^>]*>/i, /<\/title>/i);
   const text = htmlToText(html).slice(0, maxChars);
@@ -18,7 +31,7 @@ export async function webFetch(url, { maxChars = 12000 } = {}) {
   };
 }
 
-async function fetchText(url) {
+async function fetchText(url: string): Promise<string> {
   const response = await fetch(url, {
     headers: {
       "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,text/plain;q=0.8,*/*;q=0.7",
@@ -29,8 +42,8 @@ async function fetchText(url) {
   return await response.text();
 }
 
-function parseDuckDuckGo(html) {
-  const results = [];
+function parseDuckDuckGo(html: string): SearchResult[] {
+  const results: SearchResult[] = [];
   const blocks = html.split(/<a[^>]+class="result__a"[^>]*>/i).slice(1);
   for (const block of blocks) {
     const rawHref = block.match(/href="([^"]+)"/i)?.[1] ?? "";
@@ -49,7 +62,7 @@ function parseDuckDuckGo(html) {
   return dedupeByUrl(results);
 }
 
-function normalizeDuckDuckGoUrl(href) {
+function normalizeDuckDuckGoUrl(href: string): string {
   if (!href) return "";
   try {
     const parsed = new URL(href, "https://duckduckgo.com");
@@ -62,7 +75,7 @@ function normalizeDuckDuckGoUrl(href) {
   return "";
 }
 
-function htmlToText(html) {
+function htmlToText(html: string): string {
   return cleanText(html
     .replace(/<script[\s\S]*?<\/script>/gi, " ")
     .replace(/<style[\s\S]*?<\/style>/gi, " ")
@@ -70,7 +83,7 @@ function htmlToText(html) {
     .replace(/<[^>]+>/g, " "));
 }
 
-function textBetween(value, start, end) {
+function textBetween(value: string, start: RegExp, end: RegExp): string {
   const startMatch = value.match(start);
   if (startMatch?.index === undefined) return "";
   const rest = value.slice(startMatch.index + startMatch[0].length);
@@ -78,11 +91,11 @@ function textBetween(value, start, end) {
   return endMatch?.index === undefined ? "" : rest.slice(0, endMatch.index);
 }
 
-function cleanText(value) {
+function cleanText(value: string): string {
   return decodeHtml(value).replace(/\s+/g, " ").trim();
 }
 
-function decodeHtml(value) {
+function decodeHtml(value: string): string {
   return value
     .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")
@@ -92,7 +105,7 @@ function decodeHtml(value) {
     .replace(/&#39;/g, "'");
 }
 
-function dedupeByUrl(results) {
+function dedupeByUrl(results: SearchResult[]): SearchResult[] {
   const seen = new Set();
   return results.filter((result) => {
     if (seen.has(result.url)) return false;

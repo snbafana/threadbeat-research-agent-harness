@@ -3,9 +3,11 @@
   "name": "Threadbeat Research Agent",
   "entrypoint": "threadbeat-agent.mjs",
   "enabledTools": [
+    "query.expand",
     "web.search",
     "web.fetch",
-    "source.classify"
+    "source.classify",
+    "source.rank"
   ],
   "traceSchema": "schemas/trace-event.schema.json",
   "sessionPolicy": {

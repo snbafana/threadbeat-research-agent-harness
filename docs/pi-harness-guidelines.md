@@ -178,9 +178,11 @@ Keep this repo as the experimentation surface. Promote to Threadbeat core only w
 
 ## Immediate Build Order
 
-1. Keep the existing manifest/tool runner and harden it with `tool_failed` events.
-2. Add a Pi adapter that maps `researchTools` into Pi tool definitions.
-3. Add file-backed session storage and save points.
-4. Add a faux-provider Pi smoke so the model loop is testable without network/model calls.
-5. Add PDF, browser screenshot, translation, and source-rank tools one at a time.
-6. Add a trace critic that proposes `harness-patch.md` from actual run artifacts.
+1. Keep the existing manifest/tool runner and harden it with `tool_failed` events. Done.
+2. Add file-backed session storage and save points. Done.
+3. Add a Pi adapter that maps `researchTools` into Pi tool definitions. Done.
+4. Move harness/tool implementation to TypeScript with `tsc --noEmit` contract checks. Done.
+5. Add source-rank and query-expansion tools. Done.
+6. Add a faux-provider Pi smoke so the model loop is testable without network/model calls.
+7. Add PDF, browser screenshot, translation, and frontier-next tools one at a time.
+8. Add a trace critic that proposes `harness-patch.md` from actual run artifacts.

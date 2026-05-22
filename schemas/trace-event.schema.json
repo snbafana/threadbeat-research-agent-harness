@@ -12,6 +12,8 @@
         "query_planned",
         "tool_started",
         "tool_completed",
+        "tool_failed",
+        "save_point",
         "searched",
         "opened_url",
         "source_saved",
@@ -43,6 +45,7 @@
         "stopped_too_early",
         "no_clear_next_lead",
         "hallucinated_synthesis",
+        "tool_execution_failed",
         null
       ]
     }

@@ -4,9 +4,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "smoke": "node scripts/local-smoke.mjs"
+    "typecheck": "tsc --noEmit",
+    "smoke": "tsx scripts/tool-runner-smoke.ts && tsx scripts/pi-adapter-smoke.ts && tsx scripts/local-smoke.ts"
   },
   "engines": {
     "node": ">=22"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "tsx": "^4.22.3",
+    "typescript": "^6.0.3"
   }
 }
