@@ -82,7 +82,15 @@ async function searchCandidateQueries(baseQuery: string): Promise<SearchResult[]
     const results = await runTool("web.search", {
       query: searchQuery,
       limit: 10,
-    }, "Heartbeat data-room iteration searches for one more person to add.") as SearchResult[];
+    }, "Heartbeat data-room iteration searches for one more person to add.").catch((error) => {
+      events.push({
+        time: new Date().toISOString(),
+        action: "search_retry",
+        query: searchQuery,
+        reason: `Search query failed; trying next fallback query: ${error instanceof Error ? error.message : String(error)}`,
+      });
+      return [];
+    }) as SearchResult[];
     for (const result of results) {
       if (seen.has(result.url)) continue;
       seen.add(result.url);
