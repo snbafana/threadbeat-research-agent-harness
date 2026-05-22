@@ -188,4 +188,5 @@ Keep this repo as the experimentation surface. Promote to Threadbeat core only w
 8. Add browser.snapshot for thin fetch retry and screenshot/text preservation. Done.
 9. Add PDF preservation and best-effort text extraction. Done.
 10. Add frontier-next leads from source decisions. Done.
-11. Add translation tools and stronger source frontier expansion.
+11. Add translation preservation for local-language queries. Done.
+12. Add batch-run trajectory tooling and stronger source frontier expansion.

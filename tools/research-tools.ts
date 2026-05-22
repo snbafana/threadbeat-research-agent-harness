@@ -1,5 +1,6 @@
 import { browserSnapshot } from "./browser.ts";
 import { pdfExtract } from "./pdf.ts";
+import { translateText } from "./translation.ts";
 import { webFetch, webSearch, type FetchedPage, type SearchResult } from "./web.ts";
 
 export type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
@@ -178,6 +179,29 @@ export const researchTools: ResearchTool[] = [
         maxChars?: number;
       };
       return await pdfExtract({ url, filePath, artifactDir, name, maxChars });
+    },
+  },
+  {
+    name: "translate.text",
+    description: "Preserve original text and produce deterministic glossary-backed translation hints with uncertainty.",
+    parameters: {
+      type: "object",
+      required: ["text"],
+      properties: {
+        text: { type: "string" },
+        targetLanguage: { type: "string", default: "en" },
+        artifactDir: { type: "string" },
+        name: { type: "string" },
+      },
+    },
+    async execute(args) {
+      const { text, targetLanguage = "en", artifactDir, name } = args as {
+        text: string;
+        targetLanguage?: string;
+        artifactDir?: string;
+        name?: string;
+      };
+      return await translateText({ text, targetLanguage, artifactDir, name });
     },
   },
   {
@@ -409,7 +433,7 @@ function critiqueTrace({ ask, queryPlan, sourceDecisions }: CriticInput): Critic
   if (thin.length > 0) labels.add("failed_to_save_artifact");
   if (highValue.length === 0) labels.add("trusted_weak_source");
 
-  const nextTool = "translate.text";
+  const nextTool = "batch.run";
   return {
     failureLabels: [...labels],
     assessment: [

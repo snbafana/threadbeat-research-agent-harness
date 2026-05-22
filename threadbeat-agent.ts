@@ -43,6 +43,7 @@ await appendSession("task", {
 });
 
 const queryPlan = await runTool("query.expand", { ask: task.ask }, "Expand the task into explicit search frontiers before touching the web.") as string[];
+const queryTranslations = await translateLocalLanguageQueries(queryPlan);
 event("query_planned", {
   input: task.ask,
   output: queryPlan,
@@ -91,6 +92,7 @@ const sourceMap = {
   task: task.ask,
   sources: sourceDecisions.filter((source) => source.decision === "saved"),
   rejected: sourceDecisions.filter((source) => source.decision === "rejected"),
+  translations: queryTranslations,
   next_leads: frontier,
 };
 await writeJson(path.join(runDir, "artifacts", "source-map.json"), sourceMap);
@@ -105,6 +107,7 @@ Task: ${task.ask}
 
 - Started with a manifest-declared tool harness instead of hidden web calls.
 - Planned query expansion with query.expand because search language is a likely failure mode.
+- Preserved local-language query translations with translate.text.
 - Ran web.search over the initial query plan.
 - Opened a bounded number of result URLs with web.fetch.
 - Classified sources with source.classify and saved or rejected them with explicit reasons.
@@ -183,6 +186,28 @@ console.log(runDir);
 
 async function writeJson(file: string, value: unknown) {
   await writeFile(file, `${JSON.stringify(value, null, 2)}\n`);
+}
+
+async function translateLocalLanguageQueries(queries: string[]) {
+  const translations = [];
+  for (const query of queries) {
+    if (!/\p{Script=Han}|\p{Script=Hiragana}|\p{Script=Katakana}|\p{Script=Hangul}|\p{Script=Cyrillic}/u.test(query)) continue;
+    const translation = await runTool("translate.text", {
+      text: query,
+      targetLanguage: "en",
+      artifactDir: path.join(runDir, "artifacts", "translations"),
+      name: query,
+    }, "Preserve local-language query meaning and uncertainty before search.") as Record<string, unknown>;
+    event("translated", {
+      input: query,
+      output: translation,
+      artifact: typeof translation.artifact === "string" ? translation.artifact : undefined,
+      reason: "Local-language query text was preserved with glossary-backed translation hints.",
+      failure: translation.confidence === "low" ? "translation_loss" : null,
+    });
+    translations.push(translation);
+  }
+  return translations;
 }
 
 async function runSearches(queries: string[]) {

@@ -42,6 +42,7 @@ Current implemented tools:
 - `web.fetch`
 - `browser.snapshot`
 - `pdf.extract`
+- `translate.text`
 - `source.classify`
 - `source.rank`
 - `frontier.next`
@@ -50,7 +51,6 @@ Current implemented tools:
 Next concrete tools:
 
 - `artifact.write`: persist raw/source outputs with content hashes and preview references.
-- `translate.text`: preserve original and translated text with uncertainty notes.
 - `trace.critic`: read trace/session/artifacts and propose one harness patch.
 - `batch.run`: run repeated tasks, aggregate tool stats, and compare traces across runs.
 

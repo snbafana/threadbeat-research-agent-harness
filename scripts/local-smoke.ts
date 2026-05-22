@@ -57,6 +57,7 @@ assert.ok(trace.some((event) => event.action === "tool_started" && event.tool ==
 assert.ok(trace.some((event) => event.action === "tool_completed" && event.tool === "web.fetch"));
 assert.ok(trace.some((event) => event.action === "tool_completed" && event.tool === "browser.snapshot"));
 assert.ok(trace.some((event) => event.action === "tool_started" && event.tool === "pdf.extract") === false || trace.some((event) => event.action === "tool_completed" && event.tool === "pdf.extract"));
+assert.ok(trace.some((event) => event.action === "tool_completed" && event.tool === "translate.text"));
 assert.ok(trace.some((event) => event.action === "tool_completed" && event.tool === "source.classify"));
 assert.ok(trace.some((event) => event.action === "tool_completed" && event.tool === "source.rank"));
 assert.ok(trace.some((event) => event.action === "tool_completed" && event.tool === "frontier.next"));
@@ -65,6 +66,7 @@ assert.ok(trace.some((event) => event.action === "frontier_planned"));
 assert.ok(trace.some((event) => event.action === "save_point"));
 assert.ok(trace.some((event) => event.action === "searched"));
 assert.ok(trace.some((event) => event.action === "opened_url"));
+assert.ok(trace.some((event) => event.action === "translated"));
 assert.ok(trace.every((event) => event.reason), "every trace event needs a reviewable reason");
 assert.ok(sourceDecisions.every((source: { textChars: number; decision: string }) => source.textChars > 0 || source.decision === "rejected"), "empty extracted pages must not be saved");
 const session = readFileSync(path.join(runDir, "session.jsonl"), "utf8");
@@ -73,6 +75,7 @@ assert.match(session, /"kind":"tool_call"/);
 assert.match(session, /"kind":"save_point"/);
 const sourceMap = JSON.parse(readFileSync(path.join(runDir, "artifacts/source-map.json"), "utf8"));
 assert.ok(sourceMap.next_leads.length > 0, "source map needs planned frontier leads");
+assert.ok(sourceMap.translations.length > 0, "source map needs preserved query translations");
 
 console.log(JSON.stringify({
   ok: true,
