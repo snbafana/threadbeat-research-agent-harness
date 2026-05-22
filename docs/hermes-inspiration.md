@@ -44,13 +44,13 @@ Current implemented tools:
 - `pdf.extract`
 - `source.classify`
 - `source.rank`
+- `frontier.next`
 - `trace.critic`
 
 Next concrete tools:
 
 - `artifact.write`: persist raw/source outputs with content hashes and preview references.
 - `translate.text`: preserve original and translated text with uncertainty notes.
-- `frontier.next`: read source decisions and propose next search leads.
 - `trace.critic`: read trace/session/artifacts and propose one harness patch.
 - `batch.run`: run repeated tasks, aggregate tool stats, and compare traces across runs.
 

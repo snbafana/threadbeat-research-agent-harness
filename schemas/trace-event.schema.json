@@ -15,6 +15,7 @@
         "tool_failed",
         "save_point",
         "searched",
+        "frontier_planned",
         "opened_url",
         "snapshotted_url",
         "source_saved",

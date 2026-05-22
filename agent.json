@@ -10,6 +10,7 @@
     "pdf.extract",
     "source.classify",
     "source.rank",
+    "frontier.next",
     "trace.critic"
   ],
   "traceSchema": "schemas/trace-event.schema.json",

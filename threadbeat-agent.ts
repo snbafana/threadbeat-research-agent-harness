@@ -72,11 +72,26 @@ await appendSession("source_decisions", {
 });
 await savePoint("source_triage_completed", { sourceDecisions: sourceDecisions.length });
 
+const frontier = await runTool("frontier.next", {
+  ask: task.ask,
+  queryPlan,
+  sourceDecisions,
+}, "Turn source decisions into explicit next leads before writing the source map.") as unknown[];
+event("frontier_planned", {
+  input: { sourceDecisions: sourceDecisions.length },
+  output: frontier,
+  reason: "Persist the next research frontier separately from the initial query plan.",
+});
+await appendSession("frontier", {
+  leads: frontier,
+});
+await savePoint("frontier_planned", { leads: frontier.length });
+
 const sourceMap = {
   task: task.ask,
   sources: sourceDecisions.filter((source) => source.decision === "saved"),
   rejected: sourceDecisions.filter((source) => source.decision === "rejected"),
-  next_leads: queryPlan.slice(1),
+  next_leads: frontier,
 };
 await writeJson(path.join(runDir, "artifacts", "source-map.json"), sourceMap);
 event("artifact_created", {
@@ -94,6 +109,7 @@ Task: ${task.ask}
 - Opened a bounded number of result URLs with web.fetch.
 - Classified sources with source.classify and saved or rejected them with explicit reasons.
 - Ranked source value with source.rank.
+- Planned next leads with frontier.next.
 - Generated critique and next patch with trace.critic.
 `;
 await writeFile(path.join(runDir, "decision-log.md"), decisionLog);

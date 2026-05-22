@@ -60,6 +60,31 @@ interface CriticOutput {
   nextTool: string;
 }
 
+interface FrontierInput {
+  ask: string;
+  queryPlan: string[];
+  sourceDecisions: Array<{
+    title: string;
+    url: string;
+    decision: "saved" | "rejected";
+    reason: string;
+    sourceType?: string;
+    failure?: string | null;
+    rank?: {
+      score?: number;
+      value?: "high" | "medium" | "low";
+      followUp?: string[];
+    };
+  }>;
+}
+
+interface FrontierLead {
+  query: string;
+  reason: string;
+  priority: "high" | "medium" | "low";
+  sourceUrl?: string;
+}
+
 export const researchTools: ResearchTool[] = [
   {
     name: "query.expand",
@@ -186,6 +211,22 @@ export const researchTools: ResearchTool[] = [
     async execute(args) {
       const { result, fetched, decision } = args as { result: SearchResult; fetched: FetchedPage; decision: SourceDecision };
       return rankSource(result, fetched, decision);
+    },
+  },
+  {
+    name: "frontier.next",
+    description: "Convert source decisions and rankings into explicit next research leads.",
+    parameters: {
+      type: "object",
+      required: ["ask", "queryPlan", "sourceDecisions"],
+      properties: {
+        ask: { type: "string" },
+        queryPlan: { type: "array" },
+        sourceDecisions: { type: "array" },
+      },
+    },
+    async execute(args) {
+      return nextFrontier(args as unknown as FrontierInput);
     },
   },
   {
@@ -368,7 +409,7 @@ function critiqueTrace({ ask, queryPlan, sourceDecisions }: CriticInput): Critic
   if (thin.length > 0) labels.add("failed_to_save_artifact");
   if (highValue.length === 0) labels.add("trusted_weak_source");
 
-  const nextTool = "frontier.next";
+  const nextTool = "translate.text";
   return {
     failureLabels: [...labels],
     assessment: [
@@ -389,6 +430,62 @@ function critiqueTrace({ ask, queryPlan, sourceDecisions }: CriticInput): Critic
     ].join("\n"),
     nextTool,
   };
+}
+
+function nextFrontier({ ask, queryPlan, sourceDecisions }: FrontierInput): FrontierLead[] {
+  const leads: FrontierLead[] = [];
+  const seen = new Set(queryPlan.map((query) => query.toLowerCase()));
+  for (const source of sourceDecisions) {
+    const titleTerms = compactTitle(source.title);
+    for (const followUp of source.rank?.followUp ?? []) {
+      pushLead({
+        query: `${ask} ${titleTerms} ${followUp}`,
+        reason: `Follow-up from ${source.title}: ${followUp}`,
+        priority: source.rank?.value === "high" ? "high" : "medium",
+        sourceUrl: source.url,
+      });
+    }
+    if (source.decision === "saved" && source.sourceType === "government") {
+      pushLead({
+        query: `${ask} site:gov ${titleTerms} PDF map planning`,
+        reason: `Government-like source should be expanded into direct document/map search: ${source.title}`,
+        priority: "high",
+        sourceUrl: source.url,
+      });
+    }
+    if (source.failure === "failed_to_save_artifact") {
+      pushLead({
+        query: `${ask} ${titleTerms} alternate source PDF`,
+        reason: `Original source could not be preserved strongly enough: ${source.title}`,
+        priority: "medium",
+        sourceUrl: source.url,
+      });
+    }
+  }
+  for (const query of [
+    `${ask} filetype:pdf map planning`,
+    `${ask} official map planning document`,
+    `${ask} local language government planning map`,
+  ]) {
+    pushLead({ query, reason: "Generic depth expansion after first source pass.", priority: "low" });
+  }
+  return leads.slice(0, 10);
+
+  function pushLead(lead: FrontierLead) {
+    const key = lead.query.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    leads.push(lead);
+  }
+}
+
+function compactTitle(title: string): string {
+  return title
+    .replace(/[^\p{L}\p{N}\s-]+/gu, " ")
+    .split(/\s+/)
+    .filter((word) => word.length > 3)
+    .slice(0, 8)
+    .join(" ");
 }
 
 function inferSourceType(text: string): string {
