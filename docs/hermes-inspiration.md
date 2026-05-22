@@ -50,11 +50,11 @@ Current implemented tools:
 - `pi.loop`
 - `trace.critic`
 - `model.critic`
+- `resume.plan`
 
 Next concrete tools:
 
 - `artifact.write`: persist raw/source outputs with content hashes and preview references.
-- `resume.plan`: turn run/session artifacts into explicit heartbeat or restart instructions.
 
 Longer-term adapters:
 

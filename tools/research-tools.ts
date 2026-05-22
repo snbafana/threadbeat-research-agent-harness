@@ -5,6 +5,7 @@ import { batchRun } from "./batch.ts";
 import { pdfExtract } from "./pdf.ts";
 import { createPiTools } from "./pi-adapter.ts";
 import { runPiLoop } from "./pi-loop.ts";
+import { planResume } from "./resume.ts";
 import { translateText } from "./translation.ts";
 import { webFetch, webSearch, type FetchedPage, type SearchResult } from "./web.ts";
 
@@ -321,6 +322,27 @@ export const researchTools: ResearchTool[] = [
       return await modelCritique(args as unknown as CriticInput);
     },
   },
+  {
+    name: "resume.plan",
+    description: "Write a restartable heartbeat plan from persisted run/session/trace artifacts.",
+    parameters: {
+      type: "object",
+      required: ["runDir", "nextTool"],
+      properties: {
+        runDir: { type: "string" },
+        nextTool: { type: "string" },
+        heartbeatIntervalMinutes: { type: "number", default: 1 },
+      },
+    },
+    async execute(args) {
+      const { runDir, nextTool, heartbeatIntervalMinutes = 1 } = args as {
+        runDir: string;
+        nextTool: string;
+        heartbeatIntervalMinutes?: number;
+      };
+      return await planResume({ runDir, nextTool, heartbeatIntervalMinutes });
+    },
+  },
 ];
 
 export function createToolRunner({
@@ -485,7 +507,7 @@ function critiqueTrace({ ask, queryPlan, sourceDecisions }: CriticInput): Critic
   if (thin.length > 0) labels.add("failed_to_save_artifact");
   if (highValue.length === 0) labels.add("trusted_weak_source");
 
-  const nextTool = "resume.plan";
+  const nextTool = "artifact.write";
   return {
     failureLabels: [...labels],
     assessment: [

@@ -174,6 +174,31 @@ await appendSession("critic", {
   nextTool: criticOutput.nextTool,
   artifacts: ["critic.md", "harness-patch.md"],
 });
+await writeTrace();
+await writeArtifactIndex();
+
+const resumePlan = await runTool("resume.plan", {
+  runDir,
+  nextTool: criticOutput.nextTool,
+  heartbeatIntervalMinutes: 1,
+}, "Convert persisted run files into explicit heartbeat and restart instructions.") as {
+  artifact: string;
+  resumePrompt: string;
+  shouldResume: boolean;
+};
+event("resume_planned", {
+  artifact: resumePlan.artifact,
+  output: {
+    shouldResume: resumePlan.shouldResume,
+    resumePrompt: resumePlan.resumePrompt,
+  },
+  reason: "Persisted restart instructions so a heartbeat or worker can reload the run deterministically.",
+});
+await appendSession("resume_plan", {
+  artifact: resumePlan.artifact,
+  nextTool: criticOutput.nextTool,
+  shouldResume: resumePlan.shouldResume,
+});
 
 event("run_completed", {
   output: { runDir },

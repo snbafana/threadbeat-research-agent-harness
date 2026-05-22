@@ -41,6 +41,7 @@ for (const file of [
   "artifacts/source-map.json",
   "artifacts/search-results.json",
   "artifacts/source-decisions.json",
+  "artifacts/resume-plan.json",
 ]) {
   assert.ok(existsSync(path.join(runDir, file)), `missing ${file}`);
 }
@@ -62,6 +63,8 @@ assert.ok(trace.some((event) => event.action === "tool_completed" && event.tool 
 assert.ok(trace.some((event) => event.action === "tool_completed" && event.tool === "source.rank"));
 assert.ok(trace.some((event) => event.action === "tool_completed" && event.tool === "frontier.next"));
 assert.ok(trace.some((event) => event.action === "tool_completed" && event.tool === "model.critic"));
+assert.ok(trace.some((event) => event.action === "tool_completed" && event.tool === "resume.plan"));
+assert.ok(trace.some((event) => event.action === "resume_planned"));
 assert.ok(trace.some((event) => event.action === "frontier_planned"));
 assert.ok(trace.some((event) => event.action === "save_point"));
 assert.ok(trace.some((event) => event.action === "searched"));
@@ -73,11 +76,14 @@ const session = readFileSync(path.join(runDir, "session.jsonl"), "utf8");
 assert.match(session, /"kind":"task"/);
 assert.match(session, /"kind":"tool_call"/);
 assert.match(session, /"kind":"save_point"/);
+assert.match(session, /"kind":"resume_plan"/);
 const sourceMap = JSON.parse(readFileSync(path.join(runDir, "artifacts/source-map.json"), "utf8"));
 assert.ok(sourceMap.next_leads.length > 0, "source map needs planned frontier leads");
 assert.ok(sourceMap.translations.length > 0, "source map needs preserved query translations");
 const patch = readFileSync(path.join(runDir, "harness-patch.md"), "utf8");
-assert.match(patch, /resume\.plan/);
+assert.match(patch, /artifact\.write/);
+const resumePlan = JSON.parse(readFileSync(path.join(runDir, "artifacts/resume-plan.json"), "utf8"));
+assert.match(resumePlan.resumePrompt, /artifact\.write/);
 
 console.log(JSON.stringify({
   ok: true,

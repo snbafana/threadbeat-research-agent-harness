@@ -25,6 +25,7 @@
         "artifact_created",
         "critic_note",
         "harness_patch_proposed",
+        "resume_planned",
         "run_completed"
       ]
     },

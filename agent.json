@@ -15,7 +15,8 @@
     "batch.run",
     "pi.loop",
     "trace.critic",
-    "model.critic"
+    "model.critic",
+    "resume.plan"
   ],
   "traceSchema": "schemas/trace-event.schema.json",
   "sessionPolicy": {
