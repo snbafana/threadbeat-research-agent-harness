@@ -19,9 +19,13 @@ export async function webSearch(query: string, { limit = 5 }: { limit?: number }
     const html = await fetchText(url);
     return parseDuckDuckGo(html).slice(0, limit);
   } catch {
-    const url = `https://www.bing.com/search?q=${encodeURIComponent(query)}`;
-    const html = await fetchText(url);
-    return parseBing(html).slice(0, limit);
+    try {
+      const url = `https://www.bing.com/search?q=${encodeURIComponent(query)}`;
+      const html = await fetchText(url);
+      return parseBing(html).slice(0, limit);
+    } catch {
+      return await searchWikipedia(query, { limit });
+    }
   }
 }
 
@@ -37,13 +41,13 @@ export async function webFetch(url: string, { maxChars = 12000 }: { maxChars?: n
   };
 }
 
-async function fetchText(url: string): Promise<string> {
+async function fetchText(url: string, options: { accept?: string } = {}): Promise<string> {
   let lastError: unknown;
   for (let attempt = 1; attempt <= 3; attempt += 1) {
     try {
       const response = await fetch(url, {
         headers: {
-          "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,text/plain;q=0.8,*/*;q=0.7",
+          "accept": options.accept ?? "text/html,application/xhtml+xml,application/xml;q=0.9,text/plain;q=0.8,*/*;q=0.7",
           "user-agent": USER_AGENT,
         },
       });
@@ -106,6 +110,24 @@ function parseBing(html: string): SearchResult[] {
     });
   }
   return dedupeByUrl(results);
+}
+
+async function searchWikipedia(query: string, { limit }: { limit: number }): Promise<SearchResult[]> {
+  const url = `https://en.wikipedia.org/w/api.php?action=opensearch&format=json&origin=*&limit=${limit}&search=${encodeURIComponent(query)}`;
+  const text = await fetchText(url, { accept: "application/json,text/plain;q=0.8,*/*;q=0.5" });
+  const parsed = JSON.parse(text) as [string, string[], string[], string[]];
+  const titles = parsed[1] ?? [];
+  const snippets = parsed[2] ?? [];
+  const urls = parsed[3] ?? [];
+  return titles.flatMap((title, index) => {
+    const url = urls[index];
+    if (!url) return [];
+    return [{
+      title,
+      url,
+      snippet: snippets[index] ?? "",
+    }];
+  });
 }
 
 function normalizeHttpUrl(href: string): string {
